@@ -395,26 +395,44 @@ get_shape_geometry <- function(gtfs, shape = NULL, project_crs = 4326) {
 #' @param project_crs Optional. The projection to use when performing spatial calculations. Consider setting to a Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS 84 ellipsoid).
 #' @return The "points" input (either dataframe or SF) with an appended column for the linear distance along the route.
 #' @export
-project_onto_route <- function(gtfs, points, shape, original_crs = 4326, project_crs = 4326) {
+project_onto_route <- function(shape_geometry, points,
+                               original_crs = 4326, project_crs = 4326) {
 
-  if (length(shape) != 1) {
-    stop("Please provide exactly one shape ID.")
+  # Check length of shapes -- should only be one
+  if (length(shape_geometry) > 1) {
+    stop("Please provide only one shape.")
   }
 
   # Get points SFC
-  if(!inherits(points, "sf")) {
-    points_sf <- points %>%
-      sf::st_as_sf(coords = c("lon", "lat"),
+  # If provided is dataframe with longitude and latitude, convert to SF first
+  if(is.data.frame(points) & !("sf" %in% class(points))) {
+    # If DF, check that has the required fields
+    points_fields = c(("longitude" %in% names(points)),
+                      ("latitude" %in% names(points)))
+    if (!all(points_fields)) {
+      stop("points missing the following required fields:",
+           c("longitude", "latitude")[!points_fields], sep = " ")
+    }
+    # Convert to SF
+    points_sfc <- points %>%
+      sf::st_as_sf(coords = c("longitude", "latitude"),
                    crs = original_crs) %>%
-      sf::st_transform(crs = project_crs)
+      sf::st_transform(crs = project_crs) %>%
+      sf::st_geometry()
+  } else if ("sf" %in% class(points)) {
+    points_sfc <- sf::st_geometry(points)
+  } else if ("sfc" %in% class(points)) {
+    points_sfc <- points
   } else {
-    points_sf <- points
+    stop("Unrecognized points datatype. Please input dataframe, SF, or SFC.")
   }
-  points_sfc <- sf::st_geometry(points_sf)
+
+  if (!all(sf::st_is(points_sfc, "POINT"))) {
+    stop("Unrecognized points datatype. Please ensure features are points.")
+  }
 
   # Get route line SFC
-  line_sf <- get_shape_geometry(gtfs, shape = shape, project_crs = project_crs)
-  line_sfc <- sf::st_geometry(line_sf)
+  line_sfc <- sf::st_geometry(shape_geometry)
   line_len <- sf::st_length(line_sfc)
 
   # Project and calculate distance
@@ -423,10 +441,18 @@ project_onto_route <- function(gtfs, points, shape, original_crs = 4326, project
   dist = dist_norm * line_len
   units(dist) <- NULL
 
-  # Bind distance column
-  points_dist <- points %>%
-    dplyr::mutate(distance = dist)
-
+  # If input points are SFC, no other attributes to return; just give dist
+  if ("sfc" %in% class(points)) {
+    return(dist)
+  } else if ("sf" %in% class(points)) {
+    # If input points are SF, drop geometry and add distance
+    points_dist <- points %>%
+      sf::st_drop_geometry() %>%
+      dplyr::mutate(distance = dist)
+  } else {
+    points_dist <- points %>%
+      dplyr::mutate(distance = dist)
+  }
   return(points_dist)
 }
 
@@ -434,39 +460,119 @@ project_onto_route <- function(gtfs, points, shape, original_crs = 4326, project
 #'
 #' This function returns the linear distance of each stop along one route in one direction.
 #'
-#' @param route_gtfs A GTFS for a single route in a single direction. Must contain at least shape and stop files.
-#' @param shape Optional. The GTFS shape_id to use. Must be a single value. Default is NULL, where the shape_id which appears first will be used.
+#' @param route_gtfs A tidygtfs object.
+#' @param shape_geometry Optional. The SF (not shape_id) to use for distances.
+#' If NULL, each trip will be referenced to its assigned shape. Default is NULL.
 #' @param project_crs Optional. The projection to use when performing spatial calculations. Consider setting to a Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS 84 ellipsoid).
 #' @return The GTFS stops file, with an appended column for the distance of each stop from the route's terminus.
 #' @export
-get_stop_distances <- function(route_gtfs, shape = NULL, project_crs = 4326) {
+get_stop_distances <- function(route_gtfs, shape_geometry = NULL,
+                               project_crs = 4326) {
 
-  # Set shape
-  # If not provided, use first in GTFS
-  if(is.null(shape)) {
-    all_shapes <- unique(route_gtfs$shapes$shape_id)
-    shape = all_shapes[1]
-    if (length(all_shapes) > 1) {
-      warning(paste("Multiple shapes found, and no shape_id provided. Using first shape_id: ",
-                    shape, sep = ""))
-    }
-  } else if (length(shape) != 1) {
-    stop("Please provide exactly one shape_id.")
+  # --- Validate route_gtfs ---
+  if (!("tidygtfs" %in% class(route_gtfs))) {
+    stop("Provided GTFS not a tidygtfs object.")
   }
 
-  # Get stops
-  stops_df <- route_gtfs$stops %>%
-    rename(lat = stop_lat,
-           lon = stop_lon)
 
-  # Calculate stop distances along route
-  stops_dist <- project_onto_route(gtfs = route_gtfs,
-                                   points = stops_df,
-                                   shape = shape,
-                                   original_crs = 4326,
-                                   project_crs = project_crs)
+  #  --- Check that required fields are present ---
+  # For each file, we will check if it is present & has required fields for matching
+  gtfs_val <- attr(route_gtfs, "validation_result")
+  # stops: contains stop_id, stop_lon, stop_lat
+  stops_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stops"])
+  stops_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
+                                                         gtfs_val$file == "stops"]),
+                    all(gtfs_val$field_provided_status[gtfs_val$field == "stop_lat" &
+                                                         gtfs_val$file == "stops"]),
+                    all(gtfs_val$field_provided_status[gtfs_val$field == "stop_lon" &
+                                                         gtfs_val$file == "stops"]))
+  # trips: contains shape_id
+  trips_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "trips"])
+  trips_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "shape_id" &
+                                                         gtfs_val$file == "routes"]))
 
-  return(stops_dist)
+  if (!stops_present) {
+    stop("stops not present in provided GTFS")
+  }
+  if (!all(stops_fields)) {
+    stop(paste("stops missing the following required fields: ",
+               c("stop_id", "stops_lat", "stops_lon")[!shapes_fields],
+               sep = ""))
+  }
+  if (!trips_present) {
+    stop("trips not present in provided GTFS")
+  }
+  if (!all(trips_fields)) {
+    stop(paste("trips missing the following required fields: ",
+               c("shape_id")[!shapes_fields], sep = ""))
+  }
+
+
+  # --- Spatial geometry ---
+  # Route shape
+  if (is.null(shape_geometry)) {
+    # If a specific shape has not been provided,
+    # extract geometries from those present in trips
+    used_shapes <- unique(route_gtfs$trips$shape_id)
+    shape_geometry <- get_shape_geometry(route_gtfs,
+                                         shape = used_shapes,
+                                         project_crs = project_crs)
+  }
+
+  # Point shapes
+  stop_points <- route_gtfs$stops %>%
+    dplyr::select(stop_id, stop_lat, stop_lon) %>%
+    sf::st_as_sf(coords = c("stop_lon", "stop_lat"),
+                 crs = 4326) %>%
+    sf::st_transform(crs = project_crs)
+
+  # Get distances at each stop point
+  num_shapes <- length(shape_geometry$shape_id)
+  shape_sfc <- sf::st_geometry(shape_geometry)
+  if (num_shapes == 1) {
+    # If only one shape
+    stop_dist_df <- project_onto_route(shape_geometry = shape_geometry,
+                                       points = stop_points,
+                                       project_crs = project_crs) %>%
+      sf::st_drop_geometry() %>%
+      dplyr::mutate(shape_id = shape_geometry$shape_id[1])
+
+
+    # dist_norm <- sf::st_line_project(line = shape_sfc, point = stop_points,
+    #                                  normalized = TRUE)
+    # dist = dist_norm * shape_len
+    # units(dist) <- NULL
+    #
+    # stop_dist_df <- data.frame(stop_id = route_gtfs$stops$stop_id,
+    #                            distance = dist,
+    #                            shape_id = shape_geometry$shape_id[1])
+  } else {
+    # If multiple shapes, must project onto one shape at a time
+    # Initialize list
+    stop_dist_list <- vector("list", num_shapes)
+    # Loop through shapes
+    for (iter in 1:num_shapes) {
+      current_shape <- shape_sfc[iter]
+      stop_dist_list[[iter]] <- project_onto_route(shape_geometry = current_shape,
+                                                   points = stop_points,
+                                                   project_crs = project_crs) %>%
+        sf::st_drop_geometry() %>%
+        dplyr::mutate(shape_id = shape_geometry$shape_id[iter])
+
+      # dist_norm <- sf::st_line_project(line = current_shape, point = stop_points,
+      #                                  normalized = TRUE)
+      # dist = dist_norm * shape_len[iter]
+      # units(dist) <- NULL
+      #
+      # stop_dist_list[[iter]] <- data.frame(stop_id = route_gtfs$stops$stop_id,
+      #                                      distance = dist,
+      #                                      shape_id = shape_geometry$shape_id[iter])
+    }
+    # Merge list into single dataframe
+    stop_dist_df <- purrr::list_rbind(stop_dist_list)
+  }
+
+  return(stop_dist_df)
 }
 
 #' Fits a continuous function of distance versus time.
@@ -508,57 +614,10 @@ get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_c
     agency_timezone <- route_gtfs$agency$agency_timezone[1]
   }
 
-  # Get geometry
-  if (is.null(shape_geometry)) {
-    # If a specific shape has not been provided,
-    # extract geometries from those present in trips.txt
-    used_shapes <- unique(route_gtfs$trips$shape_id)
-    shape_geometry <- get_shape_geometry(route_gtfs,
-                                         shape = used_shapes,
-                                         project_crs = project_crs)
-  }
-
-  # Get stop points
-  stop_points <- route_gtfs$stops %>%
-    dplyr::select(stop_id, stop_lat, stop_lon) %>%
-    sf::st_as_sf(coords = c("stop_lon", "stop_lat"),
-                 crs = 4326) %>%
-    sf::st_transform(crs = project_crs) %>%
-    sf::st_geometry()
-
-  # Get distances at each stop point
-  num_shapes <- length(shape_geometry$shape_id)
-  shape_sfc <- sf::st_geometry(shape_geometry)
-  shape_len <- sf::st_length(shape_sfc)
-  if (num_shapes == 1) {
-    # If only one shape
-    dist_norm <- sf::st_line_project(line = shape_sfc, point = stop_points,
-                                     normalized = TRUE)
-    dist = dist_norm * shape_len
-    units(dist) <- NULL
-
-    stop_dist_df <- data.frame(stop_id = route_gtfs$stops$stop_id,
-                               distance = dist,
-                               shape_id = shape_geometry$shape_id[1])
-  } else {
-    # If multiple shapes, must project onto one shape at a time
-    # Initialize list
-    stop_dist_list <- vector("list", num_shapes)
-    # Loop through shapes
-    for (iter in 1:num_shapes) {
-      current_shape <- shape_sfc[iter]
-      dist_norm <- sf::st_line_project(line = current_shape, point = stop_points,
-                                       normalized = TRUE)
-      dist = dist_norm * shape_len[iter]
-      units(dist) <- NULL
-
-      stop_dist_list[[iter]] <- data.frame(stop_id = route_gtfs$stops$stop_id,
-                                           distance = dist,
-                                           shape_id = shape_geometry$shape_id[iter])
-    }
-    # Merge list into single dataframe
-    stop_dist_df <- purrr::list_rbind(stop_dist_list)
-  }
+  # Get stop distances
+  stop_dist_df <- get_stop_distances(route_gtfs = route_gtfs,
+                                     shape_geometry = shape_geometry,
+                                     project_crs = project_crs)
 
   # Get time by desired schedule time
   if (use_stop_time == "departure") {
@@ -627,11 +686,11 @@ get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_c
     dplyr::filter((date >= date_min) & (date <= date_max)) %>%
     dplyr::mutate(hour_num = as.numeric(substr(time, start = 1, stop = 2)),
                   # If past midnight, increment date
-                  date = if_else(condition = (hour_num >= 24),
+                  date = dplyr::if_else(condition = (hour_num >= 24),
                                  true = (date + 1),
                                  false = date),
                   # If past midnight, adjust hour back down
-                  hour_num = if_else(condition = (hour_num >= 24),
+                  hour_num = dplyr::if_else(condition = (hour_num >= 24),
                                      true = (hour_num - 24),
                                      false = hour_num),
                   # Format time string
