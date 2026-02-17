@@ -1,85 +1,302 @@
-#' Get GTFS route IDs
+#' Filter GTFS to a desired route(s) and direction(s).
 #'
-#' GTFS uses route IDs that may differ from the short or long route names we use day-to-day.
-#' This function returns the GTFS route IDs from a given short or long route name.
+#' @description
+#' This function returns a new `tidygtfs` object with only the information
+#' relevant to your desired routes and directions. All fields included in the
+#' input `gtfs` will be filtered. Se `Details` for more information about
+#' required files and fields
 #'
-#' @param gtfs A complete GTFS object.
-#' @param route_short_name GTFS route short name, as a numeric.
-#' @param route_long_name GTFS route long name, as a character string.
-#' @return Vector of numeric route IDs.
-#' @export
-get_route_ids <- function(gtfs, route_short = NULL, route_long = NULL) {
-  if (!is.null(route_short)) {
-    raw_ids <- gtfs$routes %>%
-      dplyr::filter(route_short_name %in% route_short) %>%
-      dplyr::mutate(route_id = route_id %>% as.numeric()) %>%
-      dplyr::pull(route_id)
-  } else if (!is.null(route_long)) {
-    raw_ids <- gtfs$routes %>%
-      dplyr::filter(route_long_name %in% route_long) %>%
-      dplyr::mutate(route_id = route_id %>% as.numeric()) %>%
-      dplyr::pull(route_id)
-  } else {
-    stop("No short or long route provided.")
-  }
-  return(raw_ids)
-}
-
-#' Filter GTFS for a single route.
+#' @details
+#' The following files and fields are required for this function:
 #'
-#' GTFS information is spread across many files, making it difficult to filter for the information you actually need.
-#' This function returns a new GTFS object with only the information relevant to your desired routes.
-#' Many functions in this package are designed to work with only one route in one direction. Use this function to create that object.
+#' - `routes`: with `route_id` and `agency_id`
 #'
-#' @param gtfs A complete GTFS object.
-#' @param route_ids A numeric vector, or single numeric, containing the desired route ID(s).
-#' @param dir_id Optional. A numeric containing the disired direction number. Not filtered by defeault, but recommended.
-#' @return A complete GTFS object containing only information relevant to the desired route.
+#' - `agency`: with `agency_id`
+#'
+#' - `trips`: with `route_id`, `direction_id`, `shape_id`, `service_id`, and
+#' `trip_id`
+#'
+#' - `stop_times`: with `stop_id` and `trip_id`
+#'
+#' The following files are optional. If they are included, the must include
+#' the listed fields:
+#'
+#' - `stops`: with `stop_id`
+#'
+#' - `shapes`: with `shape_id`
+#'
+#' - `calendar`: with `service_id`
+#'
+#' - `calendar_dates`: with `service_id`
+#'
+#' - `transfers`: with `trip_id` and `stop_id`
+#'
+#' - `frequencies`: with `trip_id`
+#'
+#' - `fare_rules`: with `route_id`
+#'
+#' - `feed_info`
+#'
+#' For these optional files, the function will detect whether they are present.
+#' If so, they will be filtered; if not, they will be left `NULL` in the new
+#' GTFS. If any required file or field is missing, an error will be thrown
+#' describing what is missing.
+#'
+#' @param gtfs A tidygtfs object.
+#' @param route_ids A numeric vector or single numeric containing the desired
+#' route ID(s).
+#' @param dir_id Optional. A numeric vector or single numeric containing the
+#' desired direction ID(s).
+#' @return A tidygtfs object containing only information relevant to the desired
+#'  route and direction.
 #' @export
 filter_by_route <- function(gtfs, route_ids, dir_id = NULL) {
-  # Get new route and agencies
-  new_routes <- gtfs$routes %>%
-    dplyr::filter(route_id %in% route_ids) %>%
-    dplyr::mutate(agency_id = agency_id %>% as.numeric())
-  new_agency_id <- new_routes %>%
-    dplyr::pull(agency_id)
+  # --- Check GTFS is tidygtfs object ---
+  if (!("tidygtfs" %in% class(gtfs))) {
+    stop("Provided GTFS not a tidygtfs object.")
+  }
 
-  # Get new trips
-  new_trips <- gtfs$trips %>%
-    dplyr::filter(route_id %in% route_ids) %>%
-    {
-      if (!is.null(dir_id)) dplyr::filter(., direction_id == dir_id) else .
-    } #%>%
-  #dplyr::mutate(trip_id = trip_id %>% as.numeric())
-  new_trip_ids <- new_trips %>%
-    dplyr::pull(trip_id)
-  new_shape_ids <- new_trips %>%
-    #dplyr::mutate(shape_id = shape_id %>% as.numeric()) %>%
-    dplyr::pull(shape_id)
+  #  --- Check that required fields are present ---
+  # For each file, we will check if it is present & has required fields for matching
+  gtfs_val <- attr(gtfs, "validation_result")
+  # Agency: Present & contains agency_id
+  agency_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "agency"])
+  agency_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "agency_id" &
+                                               gtfs_val$file == "agency"]))
+  # Routes: Present & contains route_id, agency_id
+  routes_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "routes"])
+  routes_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "agency_id" &
+                                               gtfs_val$file == "routes"]),
+    all(gtfs_val$field_provided_status[gtfs_val$field == "route_id" &
+                                     gtfs_val$file == "routes"]))
+  # Trips: Present & contains route_id, trip_id, direction_id, shape_id,
+  # service_id
+  trips_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "trips"])
+  trips_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "route_id" &
+                                               gtfs_val$file == "routes"]),
+    all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
+                                     gtfs_val$file == "trips"]),
+    all(gtfs_val$field_provided_status[gtfs_val$field == "direction_id" &
+                                     gtfs_val$file == "trips"]),
+    all(gtfs_val$field_provided_status[gtfs_val$field == "shape_id" &
+                                     gtfs_val$file == "trips"]),
+    all(gtfs_val$field_provided_status[gtfs_val$field == "service_id" &
+                                     gtfs_val$file == "trips"]))
+  # stop_times: Present & contains trip_id, stop_id
+  stop_times_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stop_times"])
+  stop_times_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
+                                               gtfs_val$file == "stop_times"]),
+    all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
+                                     gtfs_val$file == "stop_times"]))
+  # stops: Optional & contains stop_id
+  stops_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stops"])
+  stops_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
+                                                    gtfs_val$file == "stops"]))
+  # shapes: Optional & contains shape_id
+  shapes_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "shapes"])
+  shapes_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "shape_id" &
+                                                    gtfs_val$file == "shapes"]))
+  # calendar: Optional & contains service_id
+  calendar_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "calendar"])
+  calendar_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "service_id" &
+                                                      gtfs_val$file == "calendar"]))
+  # calendar_dates: Optional & contains service_id
+  calendar_dates_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "calendar_dates"])
+  calendar_dates_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "service_id" &
+                                                        gtfs_val$file == "calendar_dates"]))
+  # frequencies: Optional & contains trip_id
+  frequencies_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "frequencies"])
+  frequencies_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
+                                                            gtfs_val$file == "frequencies"]))
+  # transfers: Optional & contains trip_id, stop_id
+  transfers_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "transfers"])
+  transfers_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
+                                                               gtfs_val$file == "transfers"]),
+                        all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
+                                                             gtfs_val$file == "transfers"]))
+  # fare_rules: Optional & contains route_id
+  fare_rules_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "fare_rules"])
+  fare_rules_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "route_id" &
+                                                             gtfs_val$file == "fare_rules"]))
 
-  # Get new stop times
-  new_stop_times <- gtfs$stop_times %>%
-    dplyr::filter(trip_id %in% new_trip_ids) #%>%
-  #dplyr::mutate(stop_id = stop_id %>% as.numeric())
-  new_stop_ids <- new_stop_times %>%
-    dplyr::pull(stop_id)
+  # --- Filtering ---
+  # Routes
+  if (routes_present) {
+    if (all(routes_fields)) {
+      # Get new route and agencies
+      new_routes <- gtfs$routes %>%
+        dplyr::filter(route_id %in% route_ids) %>%
+        dplyr::mutate(agency_id = agency_id %>% as.numeric())
+      new_agency_id <- new_routes %>%
+        dplyr::pull(agency_id)
+    } else {
+      stop(paste("routes missing the following required fields: ",
+                 c("agency_id", "route_id")[!routes_fields], sep = ""))
+    }
+  } else {
+    stop("routes not present in GTFS.")
+  }
 
-  # Get new stops
-  new_stops <- gtfs$stops %>%
-    dplyr::filter(stop_id %in% new_stop_ids)
+  # Trips
+  if (trips_present) {
+    if (all(trips_fields)) {
+      new_trips <- gtfs$trips %>%
+        dplyr::filter(route_id %in% route_ids)
+      if (!is.null(dir_id)) {
+        new_trips <- new_trips %>%
+          dplyr::filter(direction_id %in% dir_id)
+      }
+      new_trip_ids <- new_trips %>%
+        dplyr::pull(trip_id)
+      new_shape_ids <- new_trips %>%
+        dplyr::pull(shape_id)
+      new_service_ids <- new_trips %>%
+        dplyr::pull(service_id)
+    } else {
+      stop(paste("trips missing the following required fields: ",
+                 c("route_id", "trip_id", "direction_id", "shape_id",
+                   "service_id")[!trips_fields], sep = ""))
+    }
+  } else {
+    stop("trips not present in GTFS.")
+  }
 
-  # Get new agency
-  new_agency <- gtfs$agency %>%
-    dplyr::filter(agency_id %in% new_agency_id)
+  # stop_times
+  if (stop_times_present) {
+    if (all(stop_times_fields)) {
+      new_stop_times <- gtfs$stop_times %>%
+        dplyr::filter(trip_id %in% new_trip_ids)
+      new_stop_ids <- new_stop_times %>%
+        dplyr::pull(stop_id)
+    } else {
+      stop(paste("stop_times missing the following required fields: ",
+                 c("trip_id", "stop_id")[!stop_times_fields], sep = ""))
+    }
+  } else {
+    stop("stop_times not present in GTFS.")
+  }
 
-  # Get new shapes
-  new_shapes <- gtfs$shapes %>%
-    dplyr::filter(shape_id %in% new_shape_ids)
+  # stops
+  if (stops_present) {
+    if (all(stops_fields)) {
+      new_stops <- gtfs$stops %>%
+        dplyr::filter(stop_id %in% new_stop_ids)
+    } else {
+      stop(paste("stops missing the following required fields: ",
+                 c("stop_id")[!stops_fields], sep = ""))
+    }
+  } else {
+    new_stops <- NULL
+  }
 
-  # Compile all GTFS files as list
-  new_gtfs <- list(agency = new_agency, calendar = gtfs$calendar, routes = new_routes,
-                   shapes = new_shapes, stop_times = new_stop_times, stops = new_stops,
-                   trips = new_trips)
+  # shapes
+  if (shapes_present) {
+    if (all(shapes_fields)) {
+      new_shapes <- gtfs$shapes %>%
+        dplyr::filter(shape_id %in% new_shape_ids)
+    } else {
+      stop(paste("shapes missing the following required fields: ",
+                 c("shape_id")[!shapes_fields], sep = ""))
+    }
+  } else {
+    new_shapes <- NULL
+  }
+
+  # agency
+  if (agency_present) {
+    if (all(agency_fields)) {
+      new_agency <- gtfs$agency %>%
+        dplyr::filter(agency_id %in% new_agency_id)
+    } else {
+      stop(paste("agency missing the following required fields: ",
+                 c("agency_id")[!agency_fields], sep = ""))
+    }
+  } else {
+    stop("agency not present in GTFS.")
+  }
+
+  # calendar
+  if (calendar_present) {
+    if (all(calendar_fields)) {
+      new_calendar <- gtfs$calendar %>%
+        dplyr::filter(service_id %in% new_service_ids)
+    } else {
+      stop(paste("calendar missing the following required fields: ",
+                 c("service_id")[!calendar_fields], sep = ""))
+    }
+  } else {
+    new_calendar <- NULL
+  }
+
+  # calendar_dates
+  if (calendar_dates_present) {
+    if (all(calendar_dates_fields)) {
+      new_calendar_dates <- gtfs$calendar_dates %>%
+        dplyr::filter(service_id %in% new_service_ids)
+    } else {
+      stop(paste("calendar_dates missing the following required fields: ",
+                 c("service_id")[!calendar_dates_fields], sep = ""))
+    }
+  } else {
+    new_calendar_dates <- NULL
+  }
+
+  # frequencies
+  if (frequencies_present) {
+    if (all(frequencies_fields)) {
+      new_frequencies <- gtfs$frequencies %>%
+        dplyr::filter(trip_id %in% new_trip_ids)
+    } else {
+      stop(paste("frequencies missing the following required fields: ",
+                 c("trip_id")[!frequencies_fields], sep = ""))
+    }
+  } else {
+    new_frequencies <- NULL
+  }
+
+  # transfers
+  if (transfers_present) {
+    if (all(transfers_fields)) {
+      new_transfers <- gtfs$transfers %>%
+        dplyr::filter((trip_id %in% new_trip_ids) &
+                        (stop_id %in% new_stop_ids))
+    } else {
+      stop(paste("frequencies missing the following required fields: ",
+                 c("trip_id")[!frequencies_fields], sep = ""))
+    }
+  } else {
+    new_transfers <- NULL
+  }
+
+  # fare_rules
+  if (fare_rules_present) {
+    if (all(fare_rules_fields)) {
+      new_fare_rules <- gtfs$fare_rules %>%
+        dplyr::filter(route_id %in% route_ids)
+    } else {
+      stop(paste("fare_rules missing the following required fields: ",
+                 c("route_id")[!fare_rules_fields], sep = ""))
+    }
+  } else {
+    new_fare_rules <- NULL
+  }
+
+  # --- Compile into final new GTFS ---
+  new_gtfs <- suppressWarnings(tidytransit::as_tidygtfs(list(
+    agency = new_agency,
+    calendar = new_calendar,
+    routes = new_routes,
+    shapes = new_shapes,
+    stop_times = new_stop_times,
+    stops = new_stops,
+    trips = new_trips,
+    calendar_dates = new_calendar_dates,
+    frequencies = new_frequencies,
+    transfers = new_transfers,
+    fare_rules = new_fare_rules,
+    feed_info = gtfs$feed_info,
+    fare_attributes = gtfs$fare_attributes)))
+
   return(new_gtfs)
 }
 
