@@ -53,16 +53,6 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
                           class = "avltrajectory_single")
 }
 
-#' Calculates numerical inverse of a trajectory function
-#'
-#' Not intended for external use
-get_inverse_traj <- function(f, lower, upper, inv_tol) {
-  Vectorize(function(distance) {
-    uniroot(f = function(x) {f(x) - distance},
-            lower = lower, upper = upper, tol = inv_tol)$root
-  })
-}
-
 #' Fits a continuous function of distance versus time interpolating curve.
 #'
 #' This function fits a continuous vehicle trajectory function to observed AVL points, returning a trajectory object.
