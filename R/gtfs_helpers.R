@@ -127,6 +127,12 @@ filter_by_route <- function(gtfs, route_ids, dir_id = NULL) {
       new_routes <- gtfs$routes %>%
         dplyr::filter(route_id %in% route_ids) %>%
         dplyr::mutate(agency_id = agency_id %>% as.numeric())
+
+      # Check if new routes empty -- no matching route IDs in original GTFS
+      if (dim(new_routes)[1] == 0) {
+        stop("No matching route_ids in GTFS.")
+      }
+
       new_agency_id <- new_routes %>%
         dplyr::pull(agency_id)
     } else {
@@ -143,8 +149,14 @@ filter_by_route <- function(gtfs, route_ids, dir_id = NULL) {
       new_trips <- gtfs$trips %>%
         dplyr::filter(route_id %in% route_ids)
       if (!is.null(dir_id)) {
+        # If given, filter for direction IDs
         new_trips <- new_trips %>%
           dplyr::filter(direction_id %in% dir_id)
+
+        # Check if new trips empty -- no matching direction IDs in original GTFS
+        if (dim(new_trips)[1] == 0) {
+          stop("No matching direction_ids in GTFS.")
+        }
       }
       new_trip_ids <- new_trips %>%
         dplyr::pull(trip_id)
