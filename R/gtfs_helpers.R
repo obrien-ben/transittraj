@@ -332,14 +332,15 @@ filter_by_route <- function(gtfs, route_ids, dir_id = NULL) {
 #'
 #' - `shape_pt_sequence`
 #'
-#' @param gtfs A tidygtfs object.
+#' @inheritParams filter_by_route
 #' @param shape Optional. The GTFS shape_id to use. Can be a single value, or
-#' a vector. Default is NULL, where all `shape_id`s will be used.
-#' @param project_crs Optional. The projection to use when performing spatial
-#' calculations. Consider setting to a Euclidian projection, such as the
-#' appropriate UTM zone. Default is 4326 (WGS 84 ellipsoid).
-#' @return An SF multilinestring, with one multilinestring object per GTFS
-#' shape_id.
+#' a vector. Default is NULL, where all `shape_id`s in `gtfs` will be used.
+#' @param project_crs Optional. A numeric EPSG identifer indicating the
+#' coordinate system to use for spatial calculations. Consider setting to a
+#' Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS
+#' 84 ellipsoid).
+#' @return An SF multilinestring, with one multilinestring object per
+#' `shape_id`.
 #' @export
 get_shape_geometry <- function(gtfs, shape = NULL, project_crs = 4326) {
 
@@ -402,18 +403,18 @@ get_shape_geometry <- function(gtfs, shape = NULL, project_crs = 4326) {
 #' This function takes spatial points and projects them onto a route, returning
 #' the linear distance from the terminus of the route.
 #'
-#' @param gtfs A tidygtfs object.
+#' @inheritParams get_shape_geometry
+#' @param shape_geometry The SF object to project onto. Must include the field
+#' `shape_id`. See `get_shape_geometry()`.
 #' @param points Can be either: a dataframe representing point coordinates,
-#' with fields "longitude" and "latitude"; or, an SF or SFC point object.
-#' @param original_crs Optional. A numeric ESPG identifier. If a dataframe is
+#' with fields `longitude` and `latitude`; or, an SF or SFC point object.
+#' @param original_crs Optional. A numeric EPSG identifier. If a dataframe is
 #' provided for "points", this will be used to define the coordinate system of
-#' the longitude / latitude values.
-#' @param project_crs Optional. A numeric ESPG identifier. The projection to use
-#' when performing spatial calculations. Consider setting to a Euclidian
-#' projection, such as the appropriate UTM zone. Default is 4326 (WGS 84
-#' ellipsoid).
-#' @return The "points" input (either dataframe or SF) with an appended column
-#' for the linear distance along the route.
+#' the longitude / latitude values. Default is 4326 (WGS 84 ellipsoid).
+#' @return The `points` input (either dataframe or SF) with an appended column
+#' for the linear distance along the route. If `points` is an SFC, a vector of
+#' numeric distances is returned. Units are those of the spatial projection
+#' used (e.g., meters if using UTM).
 #' @export
 project_onto_route <- function(shape_geometry, points,
                                original_crs = 4326, project_crs = 4326) {
@@ -480,29 +481,31 @@ project_onto_route <- function(shape_geometry, points,
 #'
 #' @description
 #' This function returns the linear distance of each stop along a route shape,
-#' starting from the route's beginning terminal.
+#' starting from the route's beginning terminal. Unless a `shape_geometry` is
+#' provided, stops will be project onto all `shape_id`s that serve them. If a
+#' `shape_geometry` is provided, the function will look only for stops served
+#' by that shape.
 #'
-#' @param route_gtfs A tidygtfs object.
-#' @param shape_geometry Optional. The SF (not shape_id) to use for distances.
-#' Default is NULL, where each stop will be projected onto each shape it is
-#' served by.
-#' @param project_crs Optional. The projection to use when performing spatial
-#' calculations. Consider setting to a Euclidian projection, such as the
-#' appropriate UTM zone. Default is 4326 (WGS 84 ellipsoid).
-#' @return The GTFS stops file, with an appended column for the distance of
-#' each stop from the route's terminus.
+#' @inheritParams filter_by_route
+#' @inheritParams get_shape_geometry
+#' @param shape_geometry Optional. The SF object to project onto. Must include
+#' the field `shape_id`. See `get_shape_geometry()`. Default is NULL, where
+#' all shapes in `gtfs` will be used.
+#' @return A dataframe containing `stop_id`, the `shape_id` it was projected
+#' onto, and `distance`, in units of the spatial projection (e.g., meters if
+#' using UTM).
 #' @export
-get_stop_distances <- function(route_gtfs, shape_geometry = NULL,
+get_stop_distances <- function(gtfs, shape_geometry = NULL,
                                project_crs = 4326) {
 
-  # --- Validate route_gtfs ---
-  if (!("tidygtfs" %in% class(route_gtfs))) {
+  # --- Validate gtfs ---
+  if (!("tidygtfs" %in% class(gtfs))) {
     stop("Provided GTFS not a tidygtfs object.")
   }
 
   #  --- Check that required fields are present ---
   # For each file, we will check if it is present & has required fields for matching
-  gtfs_val <- attr(route_gtfs, "validation_result")
+  gtfs_val <- attr(gtfs, "validation_result")
   # stops: contains stop_id, stop_lon, stop_lat
   stops_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stops"])
   stops_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
@@ -535,7 +538,7 @@ get_stop_distances <- function(route_gtfs, shape_geometry = NULL,
   # --- Spatial geometry ---
   # Route shape
   if (is.null(shape_geometry)) {
-    shape_geometry <- get_shape_geometry(route_gtfs,
+    shape_geometry <- get_shape_geometry(gtfs,
                                          project_crs = project_crs)
   } else {
     # If own shape_geometry provided, ensure it has shape_id
@@ -555,7 +558,7 @@ get_stop_distances <- function(route_gtfs, shape_geometry = NULL,
     dplyr::distinct(stop_id, shape_id)
 
   # Join stops and shapes
-  stops_with_shapes <- route_gtfs$stops %>%
+  stops_with_shapes <- gtfs$stops %>%
     # Associate each stop with its shape ID
     dplyr::left_join(y = stop_shape_pairs, by = "stop_id",
                      relationship = "one-to-many") %>%
@@ -615,7 +618,7 @@ get_stop_distances <- function(route_gtfs, shape_geometry = NULL,
 
 #' Fits a continuous function of distance versus time.
 #'
-#' Uses scheduled stop times (via stop_times.txt) to fit an interpolating scheduled trajectory.
+#' Uses scheduled stop times (via `stop_times`) to fit an interpolating scheduled trajectory.
 #' Trajectories will be created for each trip on each day, referenced to the time during that day.
 #' Operates via get_trajectory_fun(). See this for more details.
 #'
