@@ -1,10 +1,10 @@
 #' Check if an AVL dataframe meets TIDES standards.
 #'
 #' @description
-#' The transit integrated data exchange standard (TIDES) specified columns that
+#' The transit integrated data exchange standard (TIDES) specifies columns that
 #' should be present in AVL data tables and the data types of these columns.
 #' This function verifies if those columns are present in the input `avl_df`,
-#' and if each of those columns is of the correct data type. See `Details` for
+#' and those columns are of the correct data type. See `Details` for
 #' more information.
 #'
 #' @details
@@ -23,7 +23,7 @@
 #'
 #' - `operator_id`: Should be a `character` string. This field is not standard
 #' in TIDES `vehicle_locations`, and is not a strict requirement for any AVL
-#' processing functions
+#' processing functions.
 #'
 #' - `longitude` and `latitude`: Should be `numeric`. These fields are required
 #' only to linearize AVL data, and not used afterwards.
@@ -96,16 +96,45 @@ validate_tides <- function(avl_df) {
 #'
 #' @inheritParams project_onto_route
 #' @param avl_df A dataframe of raw AVL data. Must include at least `longitude`
-#' and `latitude` columns.
-#' @param clip_buffer Optional. The distance, in units of the used projection,
-#' to clip the GPS points. Only points within this distance of the
+#' and `latitude` columns. See `validate_tides()`.
+#' @param clip_buffer Optional. The distance, in units of the used spatial
+#' projection, to clip the GPS points. Only points within this distance of the
 #' `shape_geometry` will be kept. Default is NULL, where no clip will be
 #' applied.
+#' @param shape_geometry The SF object to project onto. Must be only one shape.
+#' See `get_shape_geometry()`.
 #' @return The input `avl_df` with `latitude` and `longitude` columns replaced
 #' by a `distance` column, in the units of the spatial projection used (e.g.,
 #' meters if using UTM).
 get_linear_distances <- function(avl_df, shape_geometry, clip_buffer = NULL,
                                  original_crs = 4326, project_crs = 4326) {
+
+  # --- Validate AVL ---
+  needed_fields <- c("longitude", "latitude")
+  avl_val <- validate_tides(avl_df) %>%
+    dplyr::filter(required_field %in% needed_fields)
+  # Check presence of fields
+  if (!all(avl_val$field_present)) {
+    stop(paste("Missing required fields:",
+               avl_val$required_field[!avl_val$field_present]))
+  }
+  # Check data types of fields
+  if (!all(avl_val$field_type_ok)) {
+    stop(paste("The following fields do not have the correct data type:",
+               avl_val$required_field[!avl_val$field_type_ok]))
+  }
+
+  # --- Spatial ---
+  # Get SFC -- needed for some spatial calculations
+  shape_geometry_sfc <- sf::st_geometry(shape_geometry)
+  # Verify that geometry is only one shape
+  if (length(shape_geometry_sfc) > 1) {
+    stop("Multiple shapes provided. Input only one shape.")
+  }
+  if (sf::st_crs(shape_geometry_sfc)$epsg != project_crs) {
+    warning("Input shape CRS not identical to project_crs. Transforming shape to project_crs.")
+    shape_geometry_sfc <- sf::st_transform(shape_geometry_sfc, crs = project_crs)
+  }
 
   # Convert DF to SF
   avl_sf <- avl_df %>%
@@ -115,8 +144,10 @@ get_linear_distances <- function(avl_df, shape_geometry, clip_buffer = NULL,
 
   # Clip to near line
   if (!is.null(clip_buffer)) {
-    route_buffer <- sf::st_buffer(shape_geometry, clip_buffer)
-    avl_clipped <- sf::st_intersection(x = avl_sf, y = route_buffer)
+    route_buffer <- sf::st_buffer(shape_geometry_sfc, clip_buffer)
+    # Intersection will warn of non-constant attributes -- that's ok here
+    avl_clipped <- suppressWarnings(
+      sf::st_intersection(x = avl_sf, y = route_buffer))
 
     # Convert SF to SFC
     avl_sfc <- sf::st_geometry(avl_clipped)
@@ -134,7 +165,6 @@ get_linear_distances <- function(avl_df, shape_geometry, clip_buffer = NULL,
 
   # Project points onto line
   shape_len <- sf::st_length(shape_geometry)
-  shape_geometry_sfc <- sf::st_geometry(shape_geometry)
   avl_dist_norm <- sf::st_line_project(line = shape_geometry_sfc, point = avl_sfc,
                                        normalized = TRUE)
   avl_dist = avl_dist_norm * shape_len
