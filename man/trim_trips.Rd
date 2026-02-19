@@ -2,19 +2,32 @@
 % Please edit documentation in R/avl_cleaning.R
 \name{trim_trips}
 \alias{trim_trips}
-\title{Removes observations occuring before the trip's minimum distance, or after a trip's maximum distance.}
+\title{Removes observations occurring before a trip's minimum distance, or after a
+trip's maximum distance.}
 \usage{
 trim_trips(distance_df, trim_type = "both", return_removals = FALSE)
 }
 \arguments{
-\item{distance_df}{Dataframe of linear AVL distances. Must include: "trip_id_performed", POSIXct "event_timestamp", and numeric "distance".}
+\item{distance_df}{A dataframe of linearized AVL data. Must include
+\code{trip_id_performed}, \code{event_timestamp}, and \code{distance}.}
 
-\item{trim_type}{Optional. A string, indicating whether the beginning of trips, end of trips, or both beginning and end of trips should be trimmed. Must be one of "beginning", "end", or "both". Default is "beginning".}
+\item{trim_type}{Optional. A string, indicating whether the beginning of
+trips, end of trips, or both beginning and end of trips should be trimmed.
+Must be one of "beginning", "end", or "both". Default is "beginning".}
+
+\item{return_removals}{Optional. A boolean, should the function return
+a dataframe of points removed and why? Default is \code{FALSE}.}
 }
 \value{
-The input distance_df, with violating observations removed.
+The input \code{distance_df} with violating points removed. If
+\code{return_removals = TRUE}, a dataframe with observations removed and why.
 }
 \description{
-Sometimes observations will be recorded under a trip while that vehicle is still traveling in the opposite direction. Conversely, a trip may continue recording as it begins traversing the opposite direction.
-This function attempts to remove these observations by identifying each trip's minimum (beginning) and maximum (ending) distance, then filtering to only observations after and before these points.
+Sometimes observations will be recorded under a trip ID while a vehicle is
+still traveling in the opposite direction. Conversely, a trip may continue
+recording as it begins traversing the opposite direction. This function
+attempts to remove these observations by identifying each trip's minimum
+(beginning) and maximum (ending) distance, then filtering to only
+observations after and before these points. For both ends, the first
+occurrence of the beginning/maximum value is used.
 }

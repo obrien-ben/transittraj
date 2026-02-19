@@ -47,7 +47,7 @@ constant. Default is \code{FALSE}.}
 outliers be replaced by their window median? Default is \code{FALSE}.}
 
 \item{return_removals}{Optional. A boolean, should the function return
-a dataframe of points removed and why? Default is FALSE.}
+a dataframe of points removed and why? Default is \code{FALSE}.}
 }
 \value{
 The input \code{distance_df} with violating points removed. If
@@ -70,9 +70,9 @@ outliers based on their deviation:
 bounds for an acceptable deviation between a point and the median of the
 window around it, in units of the input \code{distance} column.
 \item Hampel filter: Uses the median absolute deviation (MAD), the median of
-deviations from the median. With a conversion factor ($s = 1.48$), this is
+deviations from the median. With a conversion factor (\code{s = 1.48}), this is
 analogous to a standard error. The \code{t_cutoff}, then, is analogous to an
-acceptable window of $t$ values.
+acceptable window of \code{t} values.
 }
 
 Both of these can be used at the same time. If multiple criteria are set,
@@ -98,7 +98,7 @@ treatments, controlled by \code{replace_outliers}:
 median filters, but is likely not appropriate for AVL data. Replacement
 may introduce non-monotonicities.
 \item Removal of the point. This is a less common approach, but may be a more
-sensible approach, given that interpolating curves will be fit later in the
-cleaning process.
+sensible for this application, given that interpolating curves will be fit
+later in the cleaning process.
 }
 }

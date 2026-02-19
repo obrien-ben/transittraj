@@ -116,7 +116,7 @@ clean_overlapping_subtrips <- function(distance_df, check_operator = FALSE,
     needed_fields <- c("event_timestamp", "trip_id_performed",
                        "vehicle_id")
   }
-  validate_input_to_tides(needed_fields, avl_df)
+  validate_input_to_tides(needed_fields, distance_df)
 
   # If all trips with multiple operators or vehicles should be removed
   if (remove_non_overlapping) {
@@ -254,9 +254,9 @@ clean_overlapping_subtrips <- function(distance_df, check_operator = FALSE,
 #' window around it, in units of the input `distance` column.
 #'
 #' - Hampel filter: Uses the median absolute deviation (MAD), the median of
-#' deviations from the median. With a conversion factor ($s = 1.48$), this is
+#' deviations from the median. With a conversion factor (`s = 1.48`), this is
 #' analogous to a standard error. The `t_cutoff`, then, is analogous to an
-#' acceptable window of $t$ values.
+#' acceptable window of `t` values.
 #'
 #' Both of these can be used at the same time. If multiple criteria are set,
 #' a point will be removed if it violates any criterion.
@@ -282,8 +282,8 @@ clean_overlapping_subtrips <- function(distance_df, check_operator = FALSE,
 #' may introduce non-monotonicities.
 #'
 #' - Removal of the point. This is a less common approach, but may be a more
-#' sensible approach, given that interpolating curves will be fit later in the
-#' cleaning process.
+#' sensible for this application, given that interpolating curves will be fit
+#' later in the cleaning process.
 #'
 #' @param distance_df A dataframe of linearized AVL data. Must include
 #' `trip_id_performed`, `event_timestamp`, and `distance`.
@@ -306,18 +306,19 @@ clean_overlapping_subtrips <- function(distance_df, check_operator = FALSE,
 #' deviation of an observation from its window median, in units of distance.
 #' Default is `-Inf`.
 #' @param return_removals Optional. A boolean, should the function return
-#' a dataframe of points removed and why? Default is FALSE.
+#' a dataframe of points removed and why? Default is `FALSE`.
 #' @return The input `distance_df` with violating points removed. If
 #' `return_removals = TRUE`, a dataframe with observations removed and why.
 #' @export
 clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
                         min_median_deviation = -Inf, max_median_deviation = Inf,
-                        evaluate_tails = FALSE, evaluate_implosions = FALSE, replace_outliers = FALSE,
+                        evaluate_tails = FALSE, evaluate_implosions = FALSE,
+                        replace_outliers = FALSE,
                         return_removals = FALSE) {
 
   # --- Validate AVL ---
   needed_fields <- c("trip_id_performed", "event_timestamp", "distance")
-  validate_input_to_tides(needed_fields, avl_df)
+  validate_input_to_tides(needed_fields, distance_df)
 
   num_obs <- floor(neighborhood_width / 2)
   medians_df <- distance_df %>%
@@ -366,27 +367,41 @@ clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
   }
 }
 
-#' Filters out entire trips which do not meet distance or duration requirements
+#' Filters out entire trips which do not meet distance or duration requirements.
 #'
-#' This function filters trips to be within the provided range of total duration or distance traveled.
-#' Trips with excessive time or distance gaps can also be removed.
-#' Trips outside the provided ranges are entirely removed from the dataset.
-#' Units of inputs should match those of distance and time columns in the input dataframe.
+#' This function identifies trips that do not meet some acceptable duration and
+#' distance traveled ranges, or that have large time or distance gaps in the
+#' middle. Violating trips will be removed.
 #'
-#' @param distance_df Dataframe of linear AVL distances. Must include: "trip_id_performed", POSIXct "event_timestamp", and numeric "distance".
-#' @param max_trip_distance Optional. The maximum distance traveled over one trip. Default is Inf.
-#' @param min_trip_distance Optional. The minimum distance traveled over one trip. Default is -Inf.
-#' @param max_trip_duration Optional. The maximum event_timestamp duration, in seconds, of one trip. Default is Inf.
-#' @param min_trip_duration Optional. The minimum event_timestamp duration, in seconds, of one trip. Default is -Inf.
-#' @param max_distance_gap Optional. The maximum change in distance between two observations. Default is Inf.
-#' @param max_time_gap Optional. The maximum time between two observations, in seconds. Default is Inf.
-#' @param return_removals. Optional. A boolean, should the function return a dataframe of the trips removed and why? Default is FALSE.
+#' @inheritParams clean_jumps
+#' @param max_trip_distance Optional. The maximum distance traveled over one
+#' trip, in units of input `distance`. Default is Inf.
+#' @param min_trip_distance Optional. The minimum distance traveled over one
+#' trip, in units of input `distance`. Default is -Inf.
+#' @param max_trip_duration Optional. The maximum event_timestamp duration
+#' of one trip, in seconds. Default is Inf.
+#' @param min_trip_duration Optional. The minimum event_timestamp duration
+#' of one trip, in seconds. Default is -Inf.
+#' @param max_distance_gap Optional. The maximum change in distance between two
+#' observations, in units of input `distance`. Default is Inf.
+#' @param max_time_gap Optional. The maximum time between two observations, in
+#' seconds. Default is Inf.
+#' @param return_removals Optional. A boolean, should the function return
+#' a dataframe of trips removed and why? Default is `FALSE`.
 #' @return The input distance_df, with violating trips removed.
+#' If `return_removals = TRUE`, a dataframe of trips removed and why.
 #' @export
-clean_incomplete_trips <- function(distance_df, max_trip_distance = Inf, min_trip_distance = -Inf,
-                                   max_trip_duration = Inf, min_trip_duration = -Inf,
+clean_incomplete_trips <- function(distance_df,
+                                   max_trip_distance = Inf,
+                                   min_trip_distance = -Inf,
+                                   max_trip_duration = Inf,
+                                   min_trip_duration = -Inf,
                                    max_distance_gap = Inf, max_time_gap = Inf,
                                    return_removals = FALSE) {
+
+  # --- Validate AVL ---
+  needed_fields <- c("trip_id_performed", "event_timestamp", "distance")
+  validate_input_to_tides(needed_fields, distance_df)
 
   # Generate necessary summary statistics
   trip_dist_summ <- distance_df %>%
@@ -433,17 +448,30 @@ clean_incomplete_trips <- function(distance_df, max_trip_distance = Inf, min_tri
   }
 }
 
-#' Removes observations occuring before the trip's minimum distance, or after a trip's maximum distance.
+#' Removes observations occurring before a trip's minimum distance, or after a
+#' trip's maximum distance.
 #'
-#' Sometimes observations will be recorded under a trip while that vehicle is still traveling in the opposite direction. Conversely, a trip may continue recording as it begins traversing the opposite direction.
-#' This function attempts to remove these observations by identifying each trip's minimum (beginning) and maximum (ending) distance, then filtering to only observations after and before these points.
+#' Sometimes observations will be recorded under a trip ID while a vehicle is
+#' still traveling in the opposite direction. Conversely, a trip may continue
+#' recording as it begins traversing the opposite direction. This function
+#' attempts to remove these observations by identifying each trip's minimum
+#' (beginning) and maximum (ending) distance, then filtering to only
+#' observations after and before these points. For both ends, the first
+#' occurrence of the beginning/maximum value is used.
 #'
-#' @param distance_df Dataframe of linear AVL distances. Must include: "trip_id_performed", POSIXct "event_timestamp", and numeric "distance".
-#' @param trim_type Optional. A string, indicating whether the beginning of trips, end of trips, or both beginning and end of trips should be trimmed. Must be one of "beginning", "end", or "both". Default is "beginning".
-#' @return The input distance_df, with violating observations removed.
+#' @inheritParams clean_jumps
+#' @param trim_type Optional. A string, indicating whether the beginning of
+#' trips, end of trips, or both beginning and end of trips should be trimmed.
+#' Must be one of "beginning", "end", or "both". Default is "beginning".
+#' @return The input `distance_df` with violating points removed. If
+#' `return_removals = TRUE`, a dataframe with observations removed and why.
 #' @export
 trim_trips <- function(distance_df, trim_type = "both",
                        return_removals = FALSE) {
+
+  # --- Validate AVL ---
+  needed_fields <- c("trip_id_performed", "event_timestamp", "distance")
+  validate_input_to_tides(needed_fields, distance_df)
 
   # Get minimum & maximum distance index of each trip
   index_df <- distance_df %>%

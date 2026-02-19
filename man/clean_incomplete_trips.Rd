@@ -2,7 +2,7 @@
 % Please edit documentation in R/avl_cleaning.R
 \name{clean_incomplete_trips}
 \alias{clean_incomplete_trips}
-\title{Filters out entire trips which do not meet distance or duration requirements}
+\title{Filters out entire trips which do not meet distance or duration requirements.}
 \usage{
 clean_incomplete_trips(
   distance_df,
@@ -16,28 +16,36 @@ clean_incomplete_trips(
 )
 }
 \arguments{
-\item{distance_df}{Dataframe of linear AVL distances. Must include: "trip_id_performed", POSIXct "event_timestamp", and numeric "distance".}
+\item{distance_df}{A dataframe of linearized AVL data. Must include
+\code{trip_id_performed}, \code{event_timestamp}, and \code{distance}.}
 
-\item{max_trip_distance}{Optional. The maximum distance traveled over one trip. Default is Inf.}
+\item{max_trip_distance}{Optional. The maximum distance traveled over one
+trip, in units of input \code{distance}. Default is Inf.}
 
-\item{min_trip_distance}{Optional. The minimum distance traveled over one trip. Default is -Inf.}
+\item{min_trip_distance}{Optional. The minimum distance traveled over one
+trip, in units of input \code{distance}. Default is -Inf.}
 
-\item{max_trip_duration}{Optional. The maximum event_timestamp duration, in seconds, of one trip. Default is Inf.}
+\item{max_trip_duration}{Optional. The maximum event_timestamp duration
+of one trip, in seconds. Default is Inf.}
 
-\item{min_trip_duration}{Optional. The minimum event_timestamp duration, in seconds, of one trip. Default is -Inf.}
+\item{min_trip_duration}{Optional. The minimum event_timestamp duration
+of one trip, in seconds. Default is -Inf.}
 
-\item{max_distance_gap}{Optional. The maximum change in distance between two observations. Default is Inf.}
+\item{max_distance_gap}{Optional. The maximum change in distance between two
+observations, in units of input \code{distance}. Default is Inf.}
 
-\item{max_time_gap}{Optional. The maximum time between two observations, in seconds. Default is Inf.}
+\item{max_time_gap}{Optional. The maximum time between two observations, in
+seconds. Default is Inf.}
 
-\item{return_removals.}{Optional. A boolean, should the function return a dataframe of the trips removed and why? Default is FALSE.}
+\item{return_removals}{Optional. A boolean, should the function return
+a dataframe of trips removed and why? Default is \code{FALSE}.}
 }
 \value{
 The input distance_df, with violating trips removed.
+If \code{return_removals = TRUE}, a dataframe of trips removed and why.
 }
 \description{
-This function filters trips to be within the provided range of total duration or distance traveled.
-Trips with excessive time or distance gaps can also be removed.
-Trips outside the provided ranges are entirely removed from the dataset.
-Units of inputs should match those of distance and time columns in the input dataframe.
+This function identifies trips that do not meet some acceptable duration and
+distance traveled ranges, or that have large time or distance gaps in the
+middle. Violating trips will be removed.
 }
