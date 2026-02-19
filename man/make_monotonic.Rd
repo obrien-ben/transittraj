@@ -41,7 +41,7 @@ There are two primary types of monotonicity:
 \item Weak monotonicity: The trajectory is increasing or constant. To make points
 weakly monotonic, this function replaces each point with the cumulative
 maximum \code{distance} value at that point in the trip. This means that
-backtracking points will be "pulled up" to the largest the bus has achieved.
+backtracking points will be "pulled up".
 \item Strict monotonicity: The trajectory is increasing only, never constant. To
 make points strictly monotonic, we first begin with a weakly monotonic
 trajectory. Then, constant portions (adjacent points with equal \code{distance}
@@ -78,6 +78,7 @@ interpolating curve, such as Fritsch-Carlson's piecewise cubic polynomials,
 consider setting \code{correct_speed = TRUE} to guarantee a monotonic
 interpolating curve.
 
-After using this function to perform corrections, use \code{verify_montonicity()}
-to check if weak, strict, and Fritsch-Carlson speed conditions are met.
+After using this function to perform corrections, use
+\code{validate_montonicity()} to check if weak, strict, and Fritsch-Carlson speed
+conditions are met.
 }

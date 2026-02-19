@@ -565,7 +565,7 @@ trim_trips <- function(distance_df, trim_type = "both",
 #' - Weak monotonicity: The trajectory is increasing or constant. To make points
 #' weakly monotonic, this function replaces each point with the cumulative
 #' maximum `distance` value at that point in the trip. This means that
-#' backtracking points will be "pulled up" to the largest the bus has achieved.
+#' backtracking points will be "pulled up".
 #'
 #' - Strict monotonicity: The trajectory is increasing only, never constant. To
 #' make points strictly monotonic, we first begin with a weakly monotonic
@@ -602,8 +602,9 @@ trim_trips <- function(distance_df, trim_type = "both",
 #' consider setting `correct_speed = TRUE` to guarantee a monotonic
 #' interpolating curve.
 #'
-#' After using this function to perform corrections, use `verify_montonicity()`
-#' to check if weak, strict, and Fritsch-Carlson speed conditions are met.
+#' After using this function to perform corrections, use
+#' `validate_montonicity()` to check if weak, strict, and Fritsch-Carlson speed
+#' conditions are met.
 #'
 #' @param distance_df A dataframe of linearized AVL data. Must include
 #' `trip_id_performed`, `event_timestamp`, and `distance`. If
@@ -629,7 +630,12 @@ make_monotonic <- function(distance_df,
   }
   validate_input_to_tides(needed_fields, distance_df)
 
-  # Pulls backward distances up to be weakly monotonic
+  # --- Validate input distance error ---
+  if (!is.numeric(add_distance_error)) {
+    stop("Please input numeric add_distance_error.")
+  }
+
+  # --- Weak montonicity ---
   mon_df <- distance_df %>%
     dplyr::arrange(trip_id_performed, event_timestamp) %>%
     dplyr::group_by(trip_id_performed) %>%
@@ -639,7 +645,7 @@ make_monotonic <- function(distance_df,
     dplyr::select(-distance) %>%
     dplyr::rename(distance = monotonic_dist)
 
-  # Adds error to be strictly monotonic
+  # --- Strict monotonicity ---
   if(add_distance_error != 0) {
 
     mon_df <- mon_df %>%
@@ -695,8 +701,8 @@ make_monotonic <- function(distance_df,
     }
   }
 
+  # --- FC constraints for speeds ---
   if (correct_speed) {
-
     # Calculate FC delta
     # And, if a correction has been made, adjust speed as needed
     mon_df <- mon_df %>%
