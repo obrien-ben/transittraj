@@ -93,9 +93,10 @@ validate_tides <- function(avl_df) {
 #' Intended for internal use only.
 validate_input_to_tides <- function(needed_fields, avl_df) {
 
-  # Get validation
+  # Get validation -- filter & sort
   avl_val <- validate_tides(avl_df) %>%
-    dplyr::filter(required_field %in% needed_fields)
+    dplyr::filter(required_field %in% needed_fields) %>%
+    dplyr::arrange(match(required_field, needed_fields))
 
   # Check presence of fields
   if (!all(avl_val$field_present)) {
