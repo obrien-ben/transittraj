@@ -161,7 +161,8 @@ get_trajectory_fun <- function(distance_df,
                                find_inverse_function = TRUE, inv_tol = 0.01,
                                return_group_function = TRUE) {
 
-  # --- Validate AVL ---
+  # --- Validation of all inputs ---
+  # Fields
   if (use_speeds) {
     needed_fields <- c("trip_id_performed", "event_timestamp", "distance",
                        "speed")
@@ -169,8 +170,41 @@ get_trajectory_fun <- function(distance_df,
     needed_fields <- c("trip_id_performed", "event_timestamp", "distance")
   }
   validate_input_to_tides(needed_fields, distance_df)
+  # Monotonicty -- must be strict if finding inverse
+  mono_check <- validate_monotonicity(distance_df,
+                                      check_speed = TRUE)
+  if (use_speeds) { # If using speeds, check all three returns; otherwise, only need first two
+    max_mono_check <- 3
+  } else {
+    max_mono_check <- 2
+  }
+  if (find_inverse_function) {
+    if (!all(mono_check[1:max_mono_check])) {
+      stop(paste(c("The following monotonicity conditions are not satisfied:",
+                   names(mono_check[1:max_mono_check])[!mono_check[1:max_mono_check]],
+                   "\nMonotonicity required inverse function."),
+                 collapse = " "))
+    }
+  } else {
+    if (!all(mono_check[1:max_mono_check])) {
+      warning(paste(c("The following monotonicity conditions are not satisfied:",
+                      names(mono_check[1:max_mono_check])[!mono_check[1:max_mono_check]],
+                      "\nMonotonicity not required for non-inverse function. Proceeding with direct function fitting."),
+                    collapse = " "))
+    }
+  }
+  # Methods
+  if (use_speeds) { # If using speeds
+    if (interp_method != "monoH.FC") {
+      # If method is monoH.FC
+      if (interp_method == "linear") {
+        warning("Speeds cannot be used for linear interpolation. Ignoring speeds and performing linear interpolation.")
+      } else {
+        warning("Using speeds for spline interpolation requires method monoH.FC. monoH.FC will be used unless use_speeds set to FALSE.")
+      }
+    }
+  }
 
-  # Check input parameters
   # Set derivative
   if (interp_method == "linear") {
     # If linear
@@ -178,23 +212,6 @@ get_trajectory_fun <- function(distance_df,
   } else {
     # If spline
     max_deriv = 3
-  }
-  # Check speed & method
-  if (use_speeds) {
-    # If using speeds
-    if ("speed" %in% names(distance_df)) {
-      # Check if speeds are in distance_df
-      if (interp_method != "monoH.FC") {
-        # if so, check that method is appropriate
-        if (interp_method == "linear") {
-          warning("Speeds cannot be used for linear interpolation. Ignoring speeds.")
-        } else {
-          warning("Using speeds for spline interpolation requires method monoH.FC. monoH.FC will be used unless use_speeds set to FALSE.")
-        }
-      }
-    } else {
-      stop("use_speeds set to TRUE, but no speeds column found in distance_df.")
-    }
   }
 
   # Perform calculations for trip bounds
@@ -233,7 +250,6 @@ get_trajectory_fun <- function(distance_df,
         current_fun <- stats::splinefunH(x = trip_df$event_timestamp,
                                          y = trip_df$distance,
                                          m = trip_df$speed)
-
       } else {
         # If not using speeds
         current_fun <- stats::splinefun(x = trip_df$event_timestamp,
