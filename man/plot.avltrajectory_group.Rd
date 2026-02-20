@@ -10,16 +10,17 @@
 \method{plot}{avltrajectory_group}(x, ...)
 }
 \arguments{
-\item{x}{The single trajectory object.}
+\item{x}{A trajectory object.}
 
 \item{...}{Other parameters (not used).}
 }
 \value{
-A ggplot2 object with a single trajectory.
+A ggplot2 object.
 }
 \description{
 This function generates a quick plot of a single or grouped trajectory
 object. Using the trajectory function, the entire trajectory will be plotted
-at a temporal resolution of 10 seconds. For more control over plotting and
+at a temporal resolution of 10 seconds. For grouped trajectories, a maximum
+of 50 trips will be plotted. For more control over plotting and
 formatting, see \code{plot_trajectory()}.
 }

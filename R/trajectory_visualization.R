@@ -1,40 +1,158 @@
-#' Generate an animated vehicle plot along a straight line.
+#' Generate an animated plot of a vehicle along a straight line.
 #'
-#' This function simplifies trajectories to a single linear line. Animations are used to show vehicles progressing along this line.
-#' If a trajectory object is provided, the interpolating function(s) will be plotted at the desired temporal resolution. If a distance_df is provided, the points will be plotted.
-#' Optionally, spatial "feature" can be added as points along the route line. These may be stations, traffic signals, etc. Optionally, a label may be added to these features.
-#' The outline colors and shapes of both vehicles and features can be mapped to their respective attributes.
-#' If using this mapping, provide a dataframe with at least the columns "outline" or "shape", plus only one column matching a column in distance_df or feature_distances. If using a trajectory object, only "trip_id_performed" can be mapped to.
-#' Feature labels will automatically match the colors of features.
-#' A gganimate object is returned, which can be further modified and customized as desired.
+#' @description
+#' This function simplifies trajectories to a single straight line. Animations
+#' are used to show vehicles' progressing along this line. Optionally, spatial
+#' "features" and labels can be added as points along the route line. A
+#' gganimate object is returned, which can be further modified and customized as
+#' desired.
 #'
-#' @param trajectory Optional. A trajectory object, either a single trajectory or grouped trajectory. If provided, distance_df must not be provided. Default is NULL.
-#' @param distance_df Optional. A dataframe of time and distance points. Must include at least "event_timestamp" and numeric "distance". If provided, trajectory must not be provided. Default is NULL.
-#' @param plot_trips Optional. A vector of trip IDs to plot. Default is NULL, which will plot all trips provided in the trajectory object or distance_df.
-#' @param timestep Optional. If a trajectory is provided, the time interval, in seconds, between interpolated observations to plot. Default is 5.
-#' @param distance_lim Optional. A vector with (minimum, maximum) distance values to plot.
-#' @param center_vehicles Optional. A boolean, should all vehicle points be centered to start at the same time (0 seconds)? Default is FALSE.
-#' @param feature_distances Optional. A dataframe with at least numeric "distance" for features. Default is NULL.
-#' @param transition_style Optional. A gganimate transition style, specifying how individual points are animated between. Default is "linear".
-#' @param route_color Optional. A color string for the color of the background route. Default is "coral".
-#' @param route_width Optional. A numeric, the linewidth of the background route. Default is 3.
-#' @param route_alpha Optional. A numeric, the opacity of the background route. Default is 1.
-#' @param feature_shape Optional. A numeric specifying the ggplot2 point shape, or a dataframe mapping an attribute in feature_distances to a shape. Must contain column "shape". Default is 21 (circle).
-#' @param feature_outline Optional. A color string, or a dataframe mapping an attribute in feature_distances to a color. Must contain column "outline". Default is "black".
-#' @param feature_fill Optional. A color string, the inside fill of feature points. Default is "white".
-#' @param feature_size Optional. A numeric, the size of the feature point. Default is 2.
-#' @param feature_stroke Optional. A numeric, the linewidth of the feature point outline. Default is 1.25.
-#' @param feature_alpha Optional. A numeric, the opacity of the feature point Default is 1.
-#' @param veh_shape Optional. A numeric specifying the ggplot2 point shape, or a dataframe mapping an attribute in distance_df or the trajectory object to a shape. Must contain column "shape". Default is 23 (diamond).
-#' @param veh_outline Optional. A color string, or a dataframe mapping an attribute in distance_df or the trajectory object to a color. Must contain column "outline". Default is "grey30".
-#' @param veh_fill Optional. A color string, the inside fill of the vehicle point. Default is "white".
-#' @param veh_size Optional. A numeric, the size of the vehicle point. Default is 3.
-#' @param veh_stroke Optional. A numeric, the linewidth of the vehicle point outline. Default is 2.
-#' @param veh_alpha Optional. A numeric, the opacity of the feature point Default is 0.8.
-#' @param label_field Optional. A string specifying the column in feature_distances with which to label the feature lines. Default is NULL, where no labels will be plotted.
-#' @param label_size Optional. The font size of the feature labels. Default is 3.
-#' @param label_alpha Optional. The opacity of the feature labels. Default is 0.6.
-#' @param label_pos Optional. A string specifying the label position on the graph. Must be either "left" or "right". Default is "left".
+#' @details
+#'
+#' ## Input Trajectory Data
+#'
+#' There are two ways to provide data to these plotting functions:
+#'
+#' - A single or grouped trajectory function. This will use the direct
+#' trajectory function at a resolution controlled by `timestep`. This is
+#' simplest, and looks best when zooming in useing `distance_lim`. The only
+#' attribute that can be mapped to if using a trajectory is `trip_id_performed`.
+#'
+#' - A `distance_df` of TIDES AVL data. This will use the distance and time
+#' point pairs for plotting, and draw linearly between them. This will look
+#' similar to a plot using `trajectory` when zoomed out. It is most useful
+#' if you want to map formatting to attributes other than `trip_id_performed`,
+#' such as a vehicle or operator ID number. If starting with a `trajectory`,
+#' but the additional controll over formatting is desired, consider using
+#' `predict()` to find generate distance and time points to plot, then joining
+#' the desired attributes to the `trip_id_performed` column.
+#'
+#' Note that only one of `trajectory` and `distance_df` can be used. If both
+#' (or neither) are provided, an error will be thrown.
+#'
+#' ## Features and Labels
+#'
+#' Often it is useful to plot the features of a route, such as its
+#' stops/stations or the traffic signals it passes through. Use
+#' `feature_distances` to provide information about spatial features to plot.
+#' Each row in `feature_distances` should include at least a `distance` column.
+#' Each of these rows will be plotted as a point on the route line.
+#'
+#' These features can also be labeled. Set `label_name` to a character string
+#' corresponding to a field in `feature_distances` to generate labels with
+#' this field as their text. The color of the label will automatically match
+#' that of the feature they describe. Labels will be placed at the y-value
+#' of the feature, and the horizontal alignment can be controlled with
+#' `label_pos`.
+#'
+#' To retrieve distance values for features, see `get_stop_distances()` and
+#' `project_onto_route()`.
+#'
+#' ## Formatting Options
+#'
+#' Once a layer is created on a `ggplot2` object, it is difficult to change its
+#' formatting. As such, this function attempts to provide as much flexibility
+#' in formatting its layers as possible. The resulting plot includes three
+#' layers:
+#'
+#' - Route line, controlled by `route_color`, `route_width`, and `route_alpha`.
+#'
+#' - Features, controlled by `feature_fill`, `feature_outline`, `feature_shape`,
+#' `feature_size`, `feature_alpha`, and `feature_stroke`.
+#'
+#' - Labels, controlled by `label_size`, `label_alpha`, and `label_pos`.
+#'
+#' - Vehicles, controlled by `veh_fill`, `veh_outline`, `veh_shape`,
+#' `veh_size`, `veh_alpha`, and `veh_stroke`.
+#'
+#' All of these formats can be controlled by inputting a single string or
+#' numeric. The following attributes can also be modified using a dataframe,
+#' mapping them to attributes of the layer:
+#'
+#' - `veh_shape` and `feature_shape`: A dataframe with one column named `shape`,
+#' and another column sharing a name with a column in `distance_df` or
+#' `feature_distances` (or, if using `trajectory`, a column named
+#' `trip_id_performed`). The values in `shape` should be valid `ggplot2` point
+#' shapes, and the values in the mapping column should match the values in
+#' feature or trip column.
+#'
+#' - `veh_outline` and `feature_outline`: A dataframe with one column named
+#' `color`, and another column sharing a name with a column in `distance_df` or
+#' `feature_distances` (or, if using `trajectory`, a column named
+#' `trip_id_performed`). The values in `color` should be valid color string,
+#' and the values in the mapping column should match the values in
+#' feature or trip column.
+#'
+#' Note that if inputting `trajectory`, instead of `distance_df`, `veh_shape`
+#' and `veh_outline` can only be mapped to `trip_id_performed`. If using
+#' `distance_df`, they may be mapped to any column in `distance_df` (e.g.,
+#' vehicle or operator IDs).
+#'
+#' For examples and a more in-depth discussion, see (xyz).
+#'
+#' @param trajectory Optional. A trajectory object, either a single trajectory
+#' or grouped trajectory. If provided, `distance_df` must not be provided.
+#' Default is `NULL`.
+#' @param distance_df Optional. A dataframe of time and distance points. Must
+#' include at least `event_timestamp` and numeric `distance`. If provided,
+#' `trajectory` must not be provided. Default is `NULL`.
+#' @param plot_trips Optional. A vector of `trip_id_performed`s to plot. Default
+#' is `NULL`, which will plot all trips provided in the `trajectory` or
+#' `distance_df`.
+#' @param timestep Optional. If `trajectory` is provided, the time interval, in
+#' seconds, between interpolated observations to plot. Default is 5.
+#' @param distance_lim Optional. A vector with `(minimum, maximum)` distance
+#' values to plot.
+#' @param center_vehicles Optional. A boolean, should all vehicle points be
+#' centered to start at the same time (0 seconds)? Default is `FALSE`.
+#' @param feature_distances Optional. A dataframe with at least numeric
+#' `distance` for features. Default is `NULL`.
+#' @param transition_style Optional. A `gganimate` `transition_style`,
+#' specifying how the animation transitions from point to point. See
+#' `gganimate::ease_aes()`. Default is `"linear"`.
+#' @param route_color Optional. A color string for the color of the background
+#' route. Default is `"coral"`.
+#' @param route_width Optional. A numeric, the linewidth of the background
+#' route. Default is 3.
+#' @param route_alpha Optional. A numeric, the opacity of the background route.
+#' Default is 1.
+#' @param feature_shape Optional. A numeric specifying the `ggplot2` point
+#' shape, or a dataframe mapping an attribute in feature_distances to a shape.
+#' Must contain column `shape`. Default is 21 (circle).
+#' @param feature_outline Optional. A color string, or a dataframe mapping an
+#' attribute in `feature_distances` to a color. Must contain column `outline`.
+#' Default is `"black"`.
+#' @param feature_fill Optional. A color string, the inside fill of feature
+#' points. Default is `"white"`.
+#' @param feature_size Optional. A numeric, the size of the feature point.
+#' Default is 2.
+#' @param feature_stroke Optional. A numeric, the linewidth of the feature point
+#' outline. Default is 1.25.
+#' @param feature_alpha Optional. A numeric, the opacity of the feature point.
+#' Default is 1.
+#' @param veh_shape Optional. A numeric specifying the `ggplot2` point shape, or
+#' a dataframe mapping an attribute in `distance_df` or `trajectory` to
+#' a shape. Must contain column `shape`. Default is 23 (diamond).
+#' @param veh_outline Optional. A color string, or a dataframe mapping an
+#' attribute in `distance_df` or `trajectory` to a color. Must contain column
+#' `outline`. Default is `"grey30"`.
+#' @param veh_fill Optional. A color string, the inside fill of the vehicle
+#' point. Default is `"white"`.
+#' @param veh_size Optional. A numeric, the size of the vehicle point. Default
+#' is 3.
+#' @param veh_stroke Optional. A numeric, the linewidth of the vehicle point
+#' outline. Default is 2.
+#' @param veh_alpha Optional. A numeric, the opacity of the feature point.
+#' Default is 0.8.
+#' @param label_field Optional. A string specifying the column in
+#' `feature_distances` with which to label the feature lines. Default is `NULL`,
+#' where no labels will be plotted.
+#' @param label_size Optional. The font size of the feature labels. Default is
+#' 3.
+#' @param label_alpha Optional. The opacity of the feature labels. Default is
+#' 0.6.
+#' @param label_pos Optional. A string specifying the label position on the
+#' graph. Must be either `"left"` or `"right"`. Default is `"left"`.
 #' @returns A gganimate object.
 #' @export
 plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips = NULL,
@@ -314,51 +432,32 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
 
 #' Generate an animated vehicle map along a route's alignment.
 #'
-#' This function generates a spatial plot of a route's alignment, as animates vehicles moving along this alignment.
-#' This function is designed to work with linearized distances, not raw GPS points. Linear distances are spatialized using the input route_geom.
-#' If a trajectory object is provided, the interpolating function(s) will be plotted at the desired temporal resolution. If a distance_df is provided, the points will be plotted.
-#' Optionally, spatial "features" can be added as points along the route line. These may be stations, traffic signals, etc.
-#' As with the trajectories, these features should be linearized (i.e., the distance along the route at which the feature occurs), not spatial. These distances are spatialized using the input route_geom.
-#' Optionally, a label may be added to these features.
-#' The outline colors and shapes of both vehicles and features can be mapped to their respective attributes.
-#' If using this attribute mapping, provide a dataframe with at least the columns "outline" or "shape", plus only one column matching a column in distance_df or feature_distances. If using a trajectory object, only "trip_id_performed" can be mapped to.
-#' Feature labels will automatically match the colors of features.
-#' A gganimate object is returned, which can be further modified and customized as desired.
+#' @description
 #'
-#' @param route_geom An SF linestring object for a single route shape. Ideally, should be the shape used to initially linearize trajectories or stop distances. The CRS of route_geom will be used for the entire map.
-#' @param trajectory Optional. A trajectory object, either a single trajectory or grouped trajectory. If provided, distance_df must not be provided. Default is NULL.
-#' @param distance_df Optional. A dataframe of time and distance points. Must include at least "event_timestamp" and numeric "distance". If provided, trajectory must not be provided. Default is NULL.
-#' @param plot_trips Optional. A vector of trip IDs to plot. Default is NULL, which will plot all trips provided in the trajectory object or distance_df.
-#' @param timestep Optional. If a trajectory is provided, the time interval, in seconds, between interpolated observations to plot. Default is 5.
-#' @param distance_lim Optional. A vector with (minimum, maximum) distance values to plot.
-#' @param center_vehicles Optional. A boolean, should all vehicle points be centered to start at the same time (0 seconds)? Default is FALSE.
-#' @param feature_distances Optional. A dataframe with at least numeric "distance" for features. Default is NULL.
-#' @param background Optional. The OSM background (basemap) for the animation. See 'rosm::osm.image()'. Default is "cartolight".
-#' @param background_zoom Optional. The zoom, relative to the "correct" level, for the background basemap. Default is 0, which will use the zoom most appropriate for the input spatial data. Entering a negative number will yield a lower resolution, "zoomed out" basemap, substantially speeding up rendering.
-#' @param bbox_expand Optional. The distance, in the units of the route_geom CRS (e.g., meters if UTM), by which to expand the plotting window in both directions. Default is NULL, which will expand the window by 0.05% of the larger dimension (or 0.0025% if distance_lim is provided).
-#' @param transition_style Optional. A gganimate transition style, specifying how individual points are animated between. Default is "linear".
-#' @param route_color Optional. A color string for the color of the background route. Default is "coral".
-#' @param route_width Optional. A numeric, the linewidth of the background route. Default is 3.
-#' @param route_alpha Optional. A numeric, the opacity of the background route. Default is 1.
-#' @param feature_shape Optional. A numeric specifying the ggplot2 point shape, or a dataframe mapping an attribute in feature_distances to a shape. Must contain column "shape". Default is 21 (circle).
-#' @param feature_outline Optional. A color string, or a dataframe mapping an attribute in feature_distances to a color. Must contain column "outline". Default is "black".
-#' @param feature_fill Optional. A color string, the inside fill of feature points. Default is "white".
-#' @param feature_size Optional. A numeric, the size of the feature point. Default is 2.
-#' @param feature_stroke Optional. A numeric, the linewidth of the feature point outline. Default is 1.25.
-#' @param feature_alpha Optional. A numeric, the opacity of the feature point Default is 1.
-#' @param veh_shape Optional. A numeric specifying the ggplot2 point shape, or a dataframe mapping an attribute in distance_df or the trajectory object to a shape. Must contain column "shape". Default is 23 (diamond).
-#' @param veh_outline Optional. A color string, or a dataframe mapping an attribute in distance_df or the trajectory object to a color. Must contain column "outline". Default is "grey30".
-#' @param veh_fill Optional. A color string, the inside fill of the vehicle point. Default is "white".
-#' @param veh_size Optional. A numeric, the size of the vehicle point. Default is 3.
-#' @param veh_stroke Optional. A numeric, the linewidth of the vehicle point outline. Default is 2.
-#' @param veh_alpha Optional. A numeric, the opacity of the feature point Default is 0.8.
-#' @param label_field Optional. A string specifying the column in feature_distances with which to label the feature lines. Default is NULL, where no labels will be plotted.
-#' @param label_size Optional. The font size of the feature labels. Default is 3.
-#' @param label_alpha Optional. The opacity of the feature labels. Default is 0.6.
-#' @param label_pos Optional. A string specifying the label position on the graph. Must be an abbreviated cardinal or intermediate direction (e.g., "N", "SW", etc.), or "in" or "out". Default is "out".
+#'
+#' @details
+#'
+#'
+#' @inheritParams plot_animated_line
+#' @param shape_geometry An SF object representing the route alignment. See
+#' `get_shape_geometry()`.
+#' @param background The OSM background (basemap) for the animation. See
+#' `rosm::osm.image()`. Default is `"cartolight"`.
+#' @param background_zoom Optional. The zoom, relative to the "correct" level,
+#' for the background basemap. Default is 0, which will use the zoom most
+#' appropriate for the input spatial data. Entering a negative number will
+#' yield a lower resolution, "zoomed out" basemap, substantially speeding up
+#' rendering.
+#' @param bbox_expand Optional. The distance, in the units of the
+#' `shape_geometry` CRS (e.g., meters if UTM), by which to expand the plotting
+#' window in both directions. Default is `NULL`, which will expand the window by
+#' 0.05% of the larger dimension (or 0.0025% if `distance_lim` is provided).
+#' @param label_pos Optional. A string specifying the label position on the
+#' map. Must be an abbreviated cardinal or intermediate direction (e.g.,
+#' `"N"`, `"SW"`, etc.), or `"in"` or `"out"`. Default is `"out"`.
 #' @returns A gganimate object.
 #' @export
-plot_animated_map <- function(route_geom, trajectory = NULL, distance_df = NULL,
+plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = NULL,
                               plot_trips = NULL, timestep = 5, distance_lim = NULL,
                               center_vehicles = FALSE, feature_distances = NULL,
                               background = "cartolight", background_zoom = 0,
@@ -526,7 +625,7 @@ plot_animated_map <- function(route_geom, trajectory = NULL, distance_df = NULL,
   # --- Spatial ---
   # Get coordinates for trips_df, but leave as dataframe
   trips_sf <- trips_df %>%
-    dplyr::mutate(point_geom = sf::st_line_interpolate(line = route_geom,
+    dplyr::mutate(point_geom = sf::st_line_interpolate(line = shape_geometry,
                                                        dist = distance,
                                                        normalized = FALSE),
                   x_spatial = sf::st_coordinates(point_geom)[,1],
@@ -535,7 +634,7 @@ plot_animated_map <- function(route_geom, trajectory = NULL, distance_df = NULL,
   # Convert features into SF points
   if (!is.null(feature_distances)) {
     features_sf <- feature_distances %>%
-      dplyr::mutate(point_geom = sf::st_line_interpolate(line = route_geom,
+      dplyr::mutate(point_geom = sf::st_line_interpolate(line = shape_geometry,
                                                          dist = distance,
                                                          normalized = FALSE),
                     x_spatial = sf::st_coordinates(point_geom)[,1],
@@ -625,11 +724,11 @@ plot_animated_map <- function(route_geom, trajectory = NULL, distance_df = NULL,
     ggspatial::annotation_map_tile(type = background, zoomin = background_zoom,
                                    progress = "none") +
     # Plot route
-    ggspatial::geom_sf(data = route_geom, color = route_color, size = route_width) +
+    ggspatial::geom_sf(data = shape_geometry, color = route_color, size = route_width) +
     # Set bounding box
     ggspatial::coord_sf(xlim = c((bbox[1] - bbox_expand), (bbox[3] + bbox_expand)),
                         ylim = c((bbox[2] - bbox_expand), (bbox[4] + bbox_expand)),
-                        crs = sf::st_crs(route_geom))
+                        crs = sf::st_crs(shape_geometry))
 
   # Add features
   if (!is.null(feature_distances)) {
