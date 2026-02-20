@@ -51,248 +51,208 @@
 #'  route and direction.
 #' @export
 filter_by_route <- function(gtfs, route_ids, dir_id = NULL) {
+
   # --- Check GTFS is tidygtfs object ---
   if (!("tidygtfs" %in% class(gtfs))) {
-    stop("Provided GTFS not a tidygtfs object.")
+    rlang::abort(message = "Provided GTFS not a tidygtfs object.",
+                 class = "error_gtfsval_not_tidygtfs")
+  }
+  gtfs_val <- attr(gtfs, "validation_result")
+
+  # --- Validate fields ---
+  # routes: route_id, agency_id
+  validate_gtfs_input(gtfs = gtfs,
+                      table = "routes",
+                      needed_fields = c("route_id", "agency_id"))
+
+  # agency: agency_id
+  validate_gtfs_input(gtfs = gtfs,
+                      table = "agency",
+                      needed_fields = c("agency_id"))
+
+  # trips: route_id, direction_id, shape_id, trip_id, service_id
+  validate_gtfs_input(gtfs = gtfs,
+                      table = "trips",
+                      needed_fields = c("route_id", "direction_id", "shape_id",
+                                 "trip_id", "service_id"))
+
+  # stop_times: route_id, agency_id
+  validate_gtfs_input(gtfs = gtfs,
+                      table = "stop_times",
+                      needed_fields = c("stop_id", "trip_id"))
+
+  # stops: stop_id (optional)
+  stops_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "stops") %>%
+                         dplyr::pull(file_provided_status))
+  if (stops_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "stops",
+                        needed_fields = c("stop_id"))
   }
 
-  #  --- Check that required fields are present ---
-  # For each file, we will check if it is present & has required fields for matching
-  gtfs_val <- attr(gtfs, "validation_result")
-  # Agency: Present & contains agency_id
-  agency_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "agency"])
-  agency_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "agency_id" &
-                                               gtfs_val$file == "agency"]))
-  # Routes: Present & contains route_id, agency_id
-  routes_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "routes"])
-  routes_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "agency_id" &
-                                               gtfs_val$file == "routes"]),
-    all(gtfs_val$field_provided_status[gtfs_val$field == "route_id" &
-                                     gtfs_val$file == "routes"]))
-  # Trips: Present & contains route_id, trip_id, direction_id, shape_id,
-  # service_id
-  trips_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "trips"])
-  trips_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "route_id" &
-                                               gtfs_val$file == "routes"]),
-    all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
-                                     gtfs_val$file == "trips"]),
-    all(gtfs_val$field_provided_status[gtfs_val$field == "direction_id" &
-                                     gtfs_val$file == "trips"]),
-    all(gtfs_val$field_provided_status[gtfs_val$field == "shape_id" &
-                                     gtfs_val$file == "trips"]),
-    all(gtfs_val$field_provided_status[gtfs_val$field == "service_id" &
-                                     gtfs_val$file == "trips"]))
-  # stop_times: Present & contains trip_id, stop_id
-  stop_times_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stop_times"])
-  stop_times_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
-                                               gtfs_val$file == "stop_times"]),
-    all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
-                                     gtfs_val$file == "stop_times"]))
-  # stops: Optional & contains stop_id
-  stops_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stops"])
-  stops_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
-                                                    gtfs_val$file == "stops"]))
-  # shapes: Optional & contains shape_id
-  shapes_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "shapes"])
-  shapes_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "shape_id" &
-                                                    gtfs_val$file == "shapes"]))
-  # calendar: Optional & contains service_id
-  calendar_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "calendar"])
-  calendar_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "service_id" &
-                                                      gtfs_val$file == "calendar"]))
-  # calendar_dates: Optional & contains service_id
-  calendar_dates_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "calendar_dates"])
-  calendar_dates_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "service_id" &
-                                                        gtfs_val$file == "calendar_dates"]))
-  # frequencies: Optional & contains trip_id
-  frequencies_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "frequencies"])
-  frequencies_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
-                                                            gtfs_val$file == "frequencies"]))
-  # transfers: Optional & contains trip_id, stop_id
-  transfers_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "transfers"])
-  transfers_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "trip_id" &
-                                                               gtfs_val$file == "transfers"]),
-                        all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
-                                                             gtfs_val$file == "transfers"]))
-  # fare_rules: Optional & contains route_id
-  fare_rules_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "fare_rules"])
-  fare_rules_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "route_id" &
-                                                             gtfs_val$file == "fare_rules"]))
+  # shapes: shape_id (optional)
+  shapes_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "shapes") %>%
+                         dplyr::pull(file_provided_status))
+  if (shapes_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "shapes",
+                        needed_fields = c("shape_id"))
+  }
+
+  # calendar: service_id (optional)
+  calendar_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "calendar") %>%
+                         dplyr::pull(file_provided_status))
+  if (calendar_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "calendar",
+                        needed_fields = c("service_id"))
+  }
+
+  # calendar_dates: service_id (optional)
+  calendar_dates_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "calendar_dates") %>%
+                         dplyr::pull(file_provided_status))
+  if (calendar_dates_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "calendar_dates",
+                        needed_fields = c("service_id"))
+  }
+
+  # transfers: trip_id, stop_id (optional)
+  transfers_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "transfers") %>%
+                         dplyr::pull(file_provided_status))
+  if (transfers_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "transfers",
+                        needed_fields = c("trip_id", "stop_id"))
+  }
+
+  # frequencies: service_id (optional)
+  frequencies_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "frequencies") %>%
+                         dplyr::pull(file_provided_status))
+  if (frequencies_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "frequencies",
+                        needed_fields = c("trip_id"))
+  }
+
+  # fare_rules: route_id (optional)
+  fare_rules_present <- all(gtfs_val %>%
+                         dplyr::filter(file == "fare_rules") %>%
+                         dplyr::pull(file_provided_status))
+  if (fare_rules_present) {
+    validate_gtfs_input(gtfs = gtfs,
+                        table = "fare_rules",
+                        needed_fields = c("route_id"))
+  }
 
   # --- Filtering ---
   # Routes
-  if (routes_present) {
-    if (all(routes_fields)) {
-      # Get new route and agencies
-      new_routes <- gtfs$routes %>%
-        dplyr::filter(route_id %in% route_ids)
-
-      # Check if new routes empty -- no matching route IDs in original GTFS
-      if (dim(new_routes)[1] == 0) {
-        stop("No matching route_ids in GTFS.")
-      }
-
-      new_agency_id <- new_routes %>%
-        dplyr::pull(agency_id)
-    } else {
-      stop(paste("routes missing the following required fields: ",
-                 c("agency_id", "route_id")[!routes_fields], sep = ""))
-    }
-  } else {
-    stop("routes not present in GTFS.")
+  new_routes <- gtfs$routes %>%
+    dplyr::filter(route_id %in% route_ids)
+  # Check if new routes empty -- no matching route IDs in original GTFS
+  if (dim(new_routes)[1] == 0) {
+    rlang::abort(message = "No matching route_ids in GTFS.",
+                 class = "error_gtfsfilt_none")
   }
+  new_agency_id <- new_routes %>%
+    dplyr::pull(agency_id)
 
   # Trips
-  if (trips_present) {
-    if (all(trips_fields)) {
-      new_trips <- gtfs$trips %>%
-        dplyr::filter(route_id %in% route_ids)
-      if (!is.null(dir_id)) {
-        # If given, filter for direction IDs
-        new_trips <- new_trips %>%
-          dplyr::filter(direction_id %in% dir_id)
-
-        # Check if new trips empty -- no matching direction IDs in original GTFS
-        if (dim(new_trips)[1] == 0) {
-          stop("No matching direction_ids in GTFS.")
-        }
-      }
-      new_trip_ids <- new_trips %>%
-        dplyr::pull(trip_id)
-      new_shape_ids <- new_trips %>%
-        dplyr::pull(shape_id)
-      new_service_ids <- new_trips %>%
-        dplyr::pull(service_id)
-    } else {
-      stop(paste("trips missing the following required fields: ",
-                 c("route_id", "trip_id", "direction_id", "shape_id",
-                   "service_id")[!trips_fields], sep = ""))
+  new_trips <- gtfs$trips %>%
+    dplyr::filter(route_id %in% route_ids)
+  if (!is.null(dir_id)) {
+    # If given, filter for direction IDs
+    new_trips <- new_trips %>%
+      dplyr::filter(direction_id %in% dir_id)
+    # Check if new trips empty -- no matching direction IDs in original GTFS
+    if (dim(new_trips)[1] == 0) {
+      rlang::abort(message = "No matching direction_ids in GTFS route.",
+                   class = "error_gtfsfilt_none")
     }
-  } else {
-    stop("trips not present in GTFS.")
   }
+  new_trip_ids <- new_trips %>%
+    dplyr::pull(trip_id)
+  new_shape_ids <- new_trips %>%
+    dplyr::pull(shape_id)
+  new_service_ids <- new_trips %>%
+    dplyr::pull(service_id)
 
   # stop_times
-  if (stop_times_present) {
-    if (all(stop_times_fields)) {
-      new_stop_times <- gtfs$stop_times %>%
-        dplyr::filter(trip_id %in% new_trip_ids)
-      new_stop_ids <- new_stop_times %>%
-        dplyr::pull(stop_id)
-    } else {
-      stop(paste("stop_times missing the following required fields: ",
-                 c("trip_id", "stop_id")[!stop_times_fields], sep = ""))
-    }
-  } else {
-    stop("stop_times not present in GTFS.")
-  }
+  new_stop_times <- gtfs$stop_times %>%
+    dplyr::filter(trip_id %in% new_trip_ids)
+  new_stop_ids <- new_stop_times %>%
+    dplyr::pull(stop_id)
 
   # stops
   if (stops_present) {
-    if (all(stops_fields)) {
-      new_stops <- gtfs$stops %>%
-        dplyr::filter(stop_id %in% new_stop_ids)
-    } else {
-      stop(paste("stops missing the following required fields: ",
-                 c("stop_id")[!stops_fields], sep = ""))
-    }
+    new_stops <- gtfs$stops %>%
+      dplyr::filter(stop_id %in% new_stop_ids)
   } else {
     new_stops <- NULL
   }
 
   # shapes
   if (shapes_present) {
-    if (all(shapes_fields)) {
-      new_shapes <- gtfs$shapes %>%
-        dplyr::filter(shape_id %in% new_shape_ids)
-    } else {
-      stop(paste("shapes missing the following required fields: ",
-                 c("shape_id")[!shapes_fields], sep = ""))
-    }
+    new_shapes <- gtfs$shapes %>%
+      dplyr::filter(shape_id %in% new_shape_ids)
   } else {
     new_shapes <- NULL
   }
 
   # agency
-  if (agency_present) {
-    if (all(agency_fields)) {
-      new_agency <- gtfs$agency %>%
-        dplyr::filter(agency_id %in% new_agency_id)
-    } else {
-      stop(paste("agency missing the following required fields: ",
-                 c("agency_id")[!agency_fields], sep = ""))
-    }
-  } else {
-    stop("agency not present in GTFS.")
-  }
+  new_agency <- gtfs$agency %>%
+    dplyr::filter(agency_id %in% new_agency_id)
 
   # calendar
   if (calendar_present) {
-    if (all(calendar_fields)) {
-      new_calendar <- gtfs$calendar %>%
-        dplyr::filter(service_id %in% new_service_ids)
-    } else {
-      stop(paste("calendar missing the following required fields: ",
-                 c("service_id")[!calendar_fields], sep = ""))
-    }
+    new_calendar <- gtfs$calendar %>%
+      dplyr::filter(service_id %in% new_service_ids)
   } else {
     new_calendar <- NULL
   }
 
   # calendar_dates
   if (calendar_dates_present) {
-    if (all(calendar_dates_fields)) {
-      new_calendar_dates <- gtfs$calendar_dates %>%
-        dplyr::filter(service_id %in% new_service_ids)
-    } else {
-      stop(paste("calendar_dates missing the following required fields: ",
-                 c("service_id")[!calendar_dates_fields], sep = ""))
-    }
+    new_calendar_dates <- gtfs$calendar_dates %>%
+      dplyr::filter(service_id %in% new_service_ids)
   } else {
     new_calendar_dates <- NULL
   }
 
   # frequencies
   if (frequencies_present) {
-    if (all(frequencies_fields)) {
-      new_frequencies <- gtfs$frequencies %>%
-        dplyr::filter(trip_id %in% new_trip_ids)
-    } else {
-      stop(paste("frequencies missing the following required fields: ",
-                 c("trip_id")[!frequencies_fields], sep = ""))
-    }
+    new_frequencies <- gtfs$frequencies %>%
+      dplyr::filter(trip_id %in% new_trip_ids)
   } else {
     new_frequencies <- NULL
   }
 
   # transfers
   if (transfers_present) {
-    if (all(transfers_fields)) {
-      new_transfers <- gtfs$transfers %>%
-        dplyr::filter((trip_id %in% new_trip_ids) &
-                        (stop_id %in% new_stop_ids))
-    } else {
-      stop(paste("frequencies missing the following required fields: ",
-                 c("trip_id")[!frequencies_fields], sep = ""))
-    }
+    new_transfers <- gtfs$transfers %>%
+      dplyr::filter((trip_id %in% new_trip_ids) &
+                      (stop_id %in% new_stop_ids))
   } else {
     new_transfers <- NULL
   }
 
   # fare_rules
   if (fare_rules_present) {
-    if (all(fare_rules_fields)) {
-      new_fare_rules <- gtfs$fare_rules %>%
-        dplyr::filter(route_id %in% route_ids)
-    } else {
-      stop(paste("fare_rules missing the following required fields: ",
-                 c("route_id")[!fare_rules_fields], sep = ""))
-    }
+    new_fare_rules <- gtfs$fare_rules %>%
+      dplyr::filter(route_id %in% route_ids)
   } else {
     new_fare_rules <- NULL
   }
 
   # --- Compile into final new GTFS ---
+  # Validator will give warnings over NULL files, if not present in
+  # input GTFS. This is OK.
   new_gtfs <- suppressWarnings(tidytransit::as_tidygtfs(list(
     agency = new_agency,
     calendar = new_calendar,
@@ -346,28 +306,13 @@ get_shape_geometry <- function(gtfs, shape = NULL, project_crs = 4326) {
   # --- Validate ---
   # Check if GTFS is tidygtfs object
   if (!("tidygtfs" %in% class(gtfs))) {
-    stop("Provided GTFS not a tidygtfs object.")
+    rlang::abort(message = "Provided GTFS not a tidygtfs object.",
+                 class = "error_gtfsval_not_tidygtfs")
   }
-
-  # Check if shapes is present and has required fields
-  gtfs_val <- attr(gtfs, "validation_result")
-  shapes_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "shapes"])
-  shapes_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "shape_id" &
-                                                          gtfs_val$file == "shapes"]),
-                     all(gtfs_val$field_provided_status[gtfs_val$field == "shape_pt_sequence" &
-                                                          gtfs_val$file == "shapes"]),
-                     all(gtfs_val$field_provided_status[gtfs_val$field == "shape_pt_lat" &
-                                                          gtfs_val$file == "shapes"]),
-                     all(gtfs_val$field_provided_status[gtfs_val$field == "shape_pt_lon" &
-                                                          gtfs_val$file == "shapes"]))
-  if (!shapes_present) {
-    stop("shapes not present in provided GTFS")
-  }
-  if (!all(shapes_fields)) {
-    stop(paste("shapes missing the following required fields: ",
-               c("shape_id", "shape_pt_sequence",
-                 "shape_pt_lat", "shape_pt_lon")[!shapes_fields], sep = ""))
-  }
+  validate_gtfs_input(gtfs,
+                      table = "shapes",
+                      needed_fields = c("shape_id", "shape_pt_sequence",
+                                        "shape_pt_lat", "shape_pt_lon"))
 
   # --- Get geometry ---
   # If specific shape not provided, use all unique shape IDs
@@ -418,22 +363,26 @@ get_shape_geometry <- function(gtfs, shape = NULL, project_crs = 4326) {
 project_onto_route <- function(shape_geometry, points,
                                original_crs = 4326, project_crs = 4326) {
 
-  # Check length of shapes -- should only be one
-  if (length(shape_geometry$shape_id) > 1) {
-    stop("Please provide only one shape.")
-  }
 
-  # Get points SFC
+  # --- Validate shape geometry ---
+  validate_shape_geometry(shape_geometry,
+                          require_shape_id = TRUE,
+                          max_length = 1,
+                          match_crs = project_crs)
+
+  # --- Points ---
   # If provided is dataframe with longitude and latitude, convert to SF first
   if(is.data.frame(points) & !("sf" %in% class(points))) {
     # If DF, check that has the required fields
     points_fields = c(("longitude" %in% names(points)),
                       ("latitude" %in% names(points)))
     if (!all(points_fields)) {
-      stop("points missing the following required fields:",
-           c("longitude", "latitude")[!points_fields], sep = " ")
+      rlang::abort(message = paste(c("points missing the following required fields:",
+                                     c("longitude", "latitude")[!points_fields]),
+                                   collapse = " "),
+                   class = "error_pointsval_fields")
     }
-    # Convert to SF
+    # Convert to SFC
     points_sfc <- points %>%
       sf::st_as_sf(coords = c("longitude", "latitude"),
                    crs = original_crs) %>%
@@ -444,11 +393,14 @@ project_onto_route <- function(shape_geometry, points,
   } else if ("sfc" %in% class(points)) {
     points_sfc <- points
   } else {
-    stop("Unrecognized points datatype. Please input dataframe, SF, or SFC.")
+    rlang::abort(message = "Unrecognized points datatype. Please input dataframe, SF, or SFC.",
+                 class = "error_pointsval_datatype")
   }
 
+  # Check that SFC is points
   if (!all(sf::st_is(points_sfc, "POINT"))) {
-    stop("Unrecognized points datatype. Please ensure features are points.")
+    rlang::abort(message = "Unrecognized points datatype. Please ensure features are points.",
+                 class = "error_pointsval_geomtype")
   }
 
   # Get route line SFC
@@ -499,28 +451,30 @@ get_stop_distances <- function(gtfs, shape_geometry = NULL,
 
   # --- Validate gtfs ---
   if (!("tidygtfs" %in% class(gtfs))) {
-    stop("Provided GTFS not a tidygtfs object.")
+    rlang::abort(message = "Provided GTFS not a tidygtfs object.",
+                 class = "error_gtfsval_not_tidygtfs")
   }
   validate_gtfs_input(gtfs,
                       table = "stops",
                       needed_fields = c("stop_id", "stop_lon", "stop_lat"))
   validate_gtfs_input(gtfs,
                       table = "trips",
-                      needed_fields = c("shape_id"))
+                      needed_fields = c("shape_id", "trip_id"))
 
-  # --- Spatial geometry ---
-  # Route shape
+  # --- Validate shape_geometry ---
   if (is.null(shape_geometry)) {
+    # If not provided, take using shape_geometry -- should be OK
     shape_geometry <- get_shape_geometry(gtfs,
                                          project_crs = project_crs)
   } else {
-    # If own shape_geometry provided, ensure it has shape_id
-    # Needed to match to appropriate stops
-    if (!("shape_id" %in% names(shape_geometry))) {
-      stop("shape_id field not found in provided shape_geometry.")
-    }
+    # If provided by user, validate
+    validate_shape_geometry(shape_geometry,
+                            require_shape_id = TRUE,
+                            max_length = Inf,
+                            match_crs = project_crs)
   }
 
+  # --- Spatial geometry ---
   # Get correct shape_ids & trip_ids
   use_shape_ids <- unique(shape_geometry$shape_id)
   trip_shape_pairs <- gtfs$trips %>%
@@ -550,7 +504,6 @@ get_stop_distances <- function(gtfs, shape_geometry = NULL,
 
   # Get distances at each stop point
   num_shapes <- length(shape_geometry$shape_id)
-  shape_sfc <- sf::st_geometry(shape_geometry)
   if (num_shapes == 1) {
     # If only one shape
     current_shape_id <- shape_geometry$shape_id[1]
@@ -569,7 +522,8 @@ get_stop_distances <- function(gtfs, shape_geometry = NULL,
     # Loop through shapes
     for (iter in 1:num_shapes) {
       current_shape_id <- shape_geometry$shape_id[iter]
-      current_shape <- shape_sfc[iter]
+      current_shape <- shape_geometry %>%
+        dplyr::filter(shape_id == current_shape_id)
       current_stops <- stop_points %>%
         dplyr::filter(shape_id == current_shape_id)
       if (dim(current_stops)[1] == 0) {
@@ -585,7 +539,6 @@ get_stop_distances <- function(gtfs, shape_geometry = NULL,
     # Merge list into single dataframe
     stop_dist_df <- purrr::list_rbind(stop_dist_list)
   }
-
   return(stop_dist_df)
 }
 
@@ -623,5 +576,62 @@ validate_gtfs_input <- function(gtfs, table, needed_fields) {
                                    table, ":", missing_fields),
                                  collapse = " "),
                  class = "error_gtfsval_missing_fields")
+  }
+}
+
+#' Function to quickly validate whether an input shape_geometry meets needs
+#'
+#' Checks:
+#' - Class (should be SF, not SFC)
+#' - Geometry type (i.e., is multilinestring)
+#' - Presence of shape_id column, if desired
+#' - Number of shapes present, if desired
+#' - Correct CRS, if desired
+#'
+#' Not intended for external use.
+validate_shape_geometry <- function(shape_geometry,
+                                    max_length = Inf,
+                                    require_shape_id = TRUE,
+                                    match_crs = NULL) {
+
+  # Check class
+  if (!("sf" %in% shape_geometry)) {
+    if ("sfc" %in% shape_geometry) {
+      rlang::abort(message = "SFC provided for shape_geometry. Please input SF object.",
+                   class = "error_geomval_datatype")
+    } else {
+      rlang::abort(message = "Unknown geometry datatype. Please input SF object.",
+                   class = "error_geomval_datatype")
+    }
+  }
+
+  # Check multilinestring
+  if (!all(sf::st_is(shape_geometry, "MULTILINESTRING"))) {
+    rlang::abort(message = "shape_geometry is not a MULTILINESTRING. Please input SF multilinestring object.",
+                 class = "error_geomval_geomtype")
+  }
+
+  # Check if shape_id is present
+  if (require_shape_id & !("shape_id" %in% names(shape_geometry))) {
+    rlang::abort(message = "shape_id field not found in provided shape_geometry.",
+                 class = "error_geomval_id")
+  }
+
+  # Check length of SF (i.e., num of shapes)
+  if (dim(shape_geometry)[1] > max_length) {
+    rlang::abort(message = paste("Too many shape_ids in shape_geometry. Please input only ",
+                                 max_length, " shapes.",
+                                 sep = ""),
+                 class = "error_geomval_length")
+  }
+
+  # Check CRS, if one is provided
+  if (!is.null(match_crs)) {
+    if (sf::st_crs(shape_geometry)$epsg != match_crs) {
+      rlang::abort(message = paste("shape_geometry not in correct projection. Please transform to EPSG ",
+                                   match_crs, ".",
+                                   sep = ""),
+                   class = "error_geomval_crs")
+    }
   }
 }

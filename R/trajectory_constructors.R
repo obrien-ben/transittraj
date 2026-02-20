@@ -471,6 +471,40 @@ get_gtfs_trajectory_fun <- function(gtfs,
                                     return_group_function = TRUE,
                                     inv_tol = 0.01) {
 
+  # --- Validate GTFS ---
+  # Only need to validate the files & fields used by this function uniquely
+  # Others will be validated in get_stop_distances()
+  if (!("tidygtfs" %in% class(gtfs))) {
+    rlang::abort(message = "Provided GTFS not a tidygtfs object.",
+                 class = "error_gtfsval_not_tidygtfs")
+  }
+  # calendar: service_id, date
+  validate_gtfs_input(gtfs,
+                      table = "calendar",
+                      needed_fields = c("date", "service_id"))
+  # stop_times: trip_id, stop_id, stop_sequence; others depend on timepoint used
+  if (use_stop_time == "departure") {
+    stop_times_fields <- c("trip_id", "stop_id", "stop_sequence",
+                           "departure_time")
+  } else if (use_stop_time == "arrival") {
+    stop_times_fields <- c("trip_id", "stop_id", "stop_sequence",
+                           "arrival_time")
+  } else if (use_stop_time == "both") {
+    stop_times_fields <- c("trip_id", "stop_id", "stop_sequence",
+                           "departure_time", "arrival_time")
+  } else {
+    rlang::abort(message = "Input use_stop_time not recognized. Please input \"departure\", \"arrival\", or \"both\".",
+                 class = "error_gtfstraj_stoptime")
+  }
+  validate_gtfs_input(gtfs,
+                      table = "stop_times",
+                      needed_fields = stop_times_fields)
+
+  # trips: service_id (shape_id, trip_id will be validated by get_stop_distances())
+  validate_gtfs_input(gtfs,
+                      table = "trips",
+                      needed_fields = c("service_id"))
+
   # Get bounds for min & max date
   # Set to bounds of input data if not provided
   if (is.null(date_min)) {
@@ -488,19 +522,6 @@ get_gtfs_trajectory_fun <- function(gtfs,
   stop_dist_df <- get_stop_distances(gtfs = gtfs,
                                      shape_geometry = shape_geometry,
                                      project_crs = project_crs)
-
-  # Validate stop_times
-  # Can do this after get_stop_distances, bc that function will validate
-  # GTFS object, trips, and shapes
-  gtfs_val <- attr(gtfs, "validation_result")
-  # stop_times: contains trip_id, stop_id
-  stop_times_present <- all(gtfs_val$file_provided_status[gtfs_val$file == "stops"])
-  stop_times_fields <- c(all(gtfs_val$field_provided_status[gtfs_val$field == "stop_id" &
-                                                         gtfs_val$file == "stops"]),
-                    all(gtfs_val$field_provided_status[gtfs_val$field == "stop_lat" &
-                                                         gtfs_val$file == "stops"]),
-                    all(gtfs_val$field_provided_status[gtfs_val$field == "stop_lon" &
-                                                         gtfs_val$file == "stops"]))
 
   # Get time by desired schedule time
   if (use_stop_time == "departure") {
