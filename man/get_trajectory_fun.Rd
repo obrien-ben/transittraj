@@ -19,7 +19,7 @@ get_trajectory_fun(
 \code{use_speed = TRUE}, must also include \code{speed}.}
 
 \item{interp_method}{Optional. The type of interpolation function to be fit.
-Either "linear", or a spline method from \code{stats::splinefun()}. Default is
+Either \code{"linear"}, or a spline method from \code{stats::splinefun()}. Default is
 \code{"monoH.FC"}.}
 
 \item{use_speeds}{Optional. A boolean, should curves be constrained by
@@ -29,7 +29,7 @@ but \code{monoH.FC} does not require speeds. Default is \code{TRUE}.}
 \item{find_inverse_function}{Optional. A boolean, should the numeric inverse
 function (time ~ distance) be calculated? Default is \code{TRUE}.}
 
-\item{inv_tol}{Optional. A numeric in the units of distance_df$distance, the
+\item{inv_tol}{Optional. A numeric in the units of input \code{distance}, the
 tolerance used when calculating the numeric inverse function. Default is
 0.01.}
 
@@ -46,7 +46,7 @@ If \code{return_group_function = TRUE}, a grouped trajectory object. If
 \description{
 This function fits a continuous vehicle trajectory function to observed AVL
 points, returning a trajectory object. Interpolation can be done linearly
-(\code{interp_method = "linear"}), or via any method support by
+(\code{interp_method = "linear"}), or via any method supported by
 \code{stats::splinefun()}.
 }
 \details{
@@ -81,12 +81,12 @@ guaranteed to be monotonic.
 \subsection{Inverse Functions}{
 
 Often times, we are concerned not with the position of a vehicle at a
-particular time, but when a bus crosses a specific point in space. This can
-be accomplished by computing an inverse trajectory function. If
+particular time, but when a vehicle crosses a specific point in space. This
+can be accomplished by computing an inverse trajectory function. If
 \code{find_inverse_function = TRUE} (the default), a numeric inverse to the fit
 trajectory function will be found, with a tolerance controlled by \code{inv_tol}.
 
-Because a numeric inverse if calculated, this can be found for any type of
+Because the inverse function is numerical, it can be found for any type of
 interpolating curve (linear or spline). However, the input data must be
 strictly monotonic for the trajectory curve to be invertible. If
 \code{find_inverse_function = TRUE}, this will be verified before proceeding (see

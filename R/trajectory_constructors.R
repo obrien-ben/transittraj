@@ -58,7 +58,7 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
 #' @description
 #' This function fits a continuous vehicle trajectory function to observed AVL
 #' points, returning a trajectory object. Interpolation can be done linearly
-#' (`interp_method = "linear"`), or via any method support by
+#' (`interp_method = "linear"`), or via any method supported by
 #' `stats::splinefun()`.
 #'
 #' @details
@@ -93,12 +93,12 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
 #' ## Inverse Functions
 #'
 #' Often times, we are concerned not with the position of a vehicle at a
-#' particular time, but when a bus crosses a specific point in space. This can
-#' be accomplished by computing an inverse trajectory function. If
+#' particular time, but when a vehicle crosses a specific point in space. This
+#' can be accomplished by computing an inverse trajectory function. If
 #' `find_inverse_function = TRUE` (the default), a numeric inverse to the fit
 #' trajectory function will be found, with a tolerance controlled by `inv_tol`.
 #'
-#' Because a numeric inverse if calculated, this can be found for any type of
+#' Because the inverse function is numerical, it can be found for any type of
 #' interpolating curve (linear or spline). However, the input data must be
 #' strictly monotonic for the trajectory curve to be invertible. If
 #' `find_inverse_function = TRUE`, this will be verified before proceeding (see
@@ -138,7 +138,7 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
 #' `trip_id_performed`, `event_timestamp`, and `distance`. If
 #' `use_speed = TRUE`, must also include `speed`.
 #' @param interp_method Optional. The type of interpolation function to be fit.
-#' Either "linear", or a spline method from `stats::splinefun()`. Default is
+#' Either `"linear"`, or a spline method from `stats::splinefun()`. Default is
 #' `"monoH.FC"`.
 #' @param use_speeds Optional. A boolean, should curves be constrained by
 #' observed AVL speeds? Should only be used with `interp_method = "monoH.FC"`,
@@ -149,7 +149,7 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
 #' is `TRUE`.
 #' @param find_inverse_function Optional. A boolean, should the numeric inverse
 #' function (time ~ distance) be calculated? Default is `TRUE`.
-#' @param inv_tol Optional. A numeric in the units of distance_df$distance, the
+#' @param inv_tol Optional. A numeric in the units of input `distance`, the
 #' tolerance used when calculating the numeric inverse function. Default is
 #' 0.01.
 #' @return If `return_group_function = TRUE`, a grouped trajectory object. If
@@ -173,22 +173,25 @@ get_trajectory_fun <- function(distance_df,
   # Monotonicty -- must be strict if finding inverse
   mono_check <- validate_monotonicity(distance_df,
                                       check_speed = TRUE)
-  if (use_speeds) { # If using speeds, check all three returns; otherwise, only need first two
+  if (use_speeds) { # If using speeds, check all three bools; otherwise, only need first two
     max_mono_check <- 3
   } else {
     max_mono_check <- 2
   }
+  checked_conditions <- mono_check[1:max_mono_check]
   if (find_inverse_function) {
-    if (!all(mono_check[1:max_mono_check])) {
+    # If finding an inverse function, must error if montonicity not met
+    if (!all(checked_conditions)) {
       stop(paste(c("The following monotonicity conditions are not satisfied:",
-                   names(mono_check[1:max_mono_check])[!mono_check[1:max_mono_check]],
+                   names(checked_conditions)[!checked_conditions],
                    "\nMonotonicity required inverse function."),
                  collapse = " "))
     }
   } else {
-    if (!all(mono_check[1:max_mono_check])) {
+    # If not finding inverse function, can proveed but will give warning
+    if (!all(checked_conditions)) {
       warning(paste(c("The following monotonicity conditions are not satisfied:",
-                      names(mono_check[1:max_mono_check])[!mono_check[1:max_mono_check]],
+                      names(checked_conditions)[!checked_conditions],
                       "\nMonotonicity not required for non-inverse function. Proceeding with direct function fitting."),
                     collapse = " "))
     }
@@ -322,54 +325,174 @@ get_trajectory_fun <- function(distance_df,
   }
 }
 
-#' Fits a continuous function of distance versus time.
+#' Fits continuous interpolating curves for transit vehicle distance and time.
 #'
-#' Uses scheduled stop times (via `stop_times`) to fit an interpolating scheduled trajectory.
-#' Trajectories will be created for each trip on each day, referenced to the time during that day.
-#' Operates via get_trajectory_fun(). See this for more details.
+#' @description
+#' This function fits a continuous vehicle trajectory function to scheduled GTFS
+#' `stop_times`, returning a trajectory object. Interpolation can be done
+#' linearly (`interp_method = "linear"`), or via any method supported by
+#' `stats::splinefun()`.
 #'
-#' @param route_gtfs A GTFS for a single route.
-#' @param shape_geometry Optional. The SF (not shape_id) to use for distances. If NULL, each trip will be referenced to its assigned shape. Default is NULL.
-#' @param project_crs Optional. A CRS numeric. The projection to use when performing spatial calculations (stops to routes). Consider setting to a Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS 84 ellipsoid).
-#' @param date_min Optional. A date object. The earliest date, in calendar.txt, to create a trip trajectory for. Default is NULL, where the first date in calendar.txt will be used.
-#' @param date_max Optional. A date object. The latest date, in calendar.txt, to create a trip trajectory for. Default is NULL, where the final date in calendar.txt will be used.
-#' @param agency_timezone Optional. A timezone string. The appropriate timezone for the stop times. Default is NULL, where the timezone in agency.txt will be used.
-#' @param use_stop_time Optional. A string. Which stop time column should be used for the timepoint? Must be one of "arrival" (use arrival_time), "departure" (use departure_time), or "both", (timepoints will be created at both the stop arrival and departure). Default is "departure".
-#' @param add_stop_dwell Optional. A numeric. If using both arrival and departure times, but they are scheduled to be equal (i.e., no dwell), how many seconds of dwell should be added? This will adjust forward the departure_time. Default is 0.
-#' @param add_distance_error Optional. A numeric. If > 0, will correct for strict monotonicty, if desired. See make_monotonic() and get_trajectory_fun(). Default is 0.
-#' @param interp_method Optional. A string, Which interpolation method should be used? See get_trajectory_fun(). Default is "linear".
-#' @param inverse_fun Optional. A boolean, should the inverse trajectory function (time ~ distance) be returned? See get_trajectory_fun(). Default is FALSE.
-#' @param return_single_fun Optional. A boolean, should a single function for all trips be returned (distance ~ f(trip, time))? See get_trajectory_fun(). Deafult is TRUE
-#' @param inv_tol Optional. A numeric. What is the tolerance for numeric inverse calculations? See get_trajectory_fun(). Default is 0.01.
-#' @return Either a single function, taking in trip, time, and derivative; or a list of single functions by trip, each taking in time and derivative.
-get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_crs = 4326,
-                                    date_min = NULL, date_max = NULL, agency_timezone = NULL,
-                                    use_stop_time = "departure", add_stop_dwell = 0, add_distance_error = 0,
-                                    interp_method = "linear", find_inverse_function = TRUE, return_group_function = TRUE,
+#' @details
+#'
+#' ## Stops, Dwells, and Monotonicity
+#'
+#' To fit an interpolating trajectory function, each observation must include
+#' distance and timestamp pairs throughout each trip. While `stop_times` does
+#' include a `shape_dist_traveled` field, this is optional and often left
+#' empty by agencies. Additionally, small distortions in spatial projections
+#' mean that projected GPS points may not align perfectly with the agency's
+#' calculated `shape_dist_traveled`. As such, this function uses
+#' `get_stop_distances()` to get the distance of each stop along each shape for
+#' each trip. Alternatively, all stops and trips can be referenced to the
+#' same spatial feature using `shape_geometry`. Consider setting `project_crs`
+#' to the same spatial projection used to linearize AVL GPS points.
+#'
+#' The trajectory functions are fit using the times a trip is scheduled to
+#' serve each stop. There is some ambiguity here: should a stop's timestamp
+#' be when the vehicle arrives, or departs? This can be controlled using
+#' `use_stop_time`, set to `"departure"` for `departure_time`, `"arrival"` for
+#' `arrival_time`, or `"both"` to include both `departure_time` and
+#' `arrival_time` as distinct observations (i.e., distance & timestamp pairs).
+#'
+#' Often times, however, a GTFS schedule will not have different `arrival_time`
+#' and `departure_time` values, especially if the timetable was not developed
+#' considering stop-level dwell times. In this scenario, it may be best to use
+#' only one of `departure_time` or `arrival_time`. If a dwell is desired, use
+#' `add_stop_dwell` to simulate a dwell time at each stop. This will increase
+#' the `departure_time` by the number of seconds specified.
+#'
+#' Adding dwells opens a new consideration, however: the trajectory will no
+#' longer be strictly monotonic, as the vehicle will hold at a constant distance
+#' for some period of time. This is only a concern if
+#' `find_inverse_function = TRUE`, which requires strictly monotonic input data.
+#' If both dwell times and an inverse function are desired, consider setting
+#' `add_distance_error > 0` to restore strict monotonicity. See
+#' `make_monotonic()` for more details.
+#'
+#' ## Interpolating Methods
+#'
+#' The goal of this function is to fit a continuous function representing a
+#' GTFS trip's scheduled distance traveled as a function of time. This
+#' function supports to types of interpolating curves:
+#'
+#' - Linear interpolation, for `interp_method = "linear"`. This will fit a
+#' simple linear function, ignorant of recorded `speed` values.
+#'
+#' - Spline interpolation, for `interp_method` set to any method supported by
+#' `stats::splinefun()` (i.e., `"fmm"`, `"natural"`, `"periodic"`, `"monoH.FC"`,
+#' or `"hyman"`.)
+#'
+#' By default, `interp_method = linear`, and linear interpolation is the
+#' recommended method for schedule trajectories. This is because timetable
+#' development typically assumes a constant running speed over a corridor, so
+#' linearly connecting stop times will best reflect a trip's scheduled
+#' trajectory.
+#'
+#' ## Inverse Functions
+#'
+#' Often times, we are concerned not with the position of a vehicle at a
+#' particular time, but when a vehicle crosses a specific point in space. This
+#' can be accomplished by computing an inverse trajectory function. If
+#' `find_inverse_function = TRUE` (the default), a numeric inverse to the fit
+#' trajectory function will be found, with a tolerance controlled by `inv_tol`.
+#'
+#' Because the inverse function is numerical, it can be found for any type of
+#' interpolating curve (linear or spline). However, the input data must be
+#' strictly monotonic for the trajectory curve to be invertible. If
+#' `find_inverse_function = TRUE`, this will be verified before proceeding (see
+#' `validate_monotonicity()`).
+#'
+#' ## The Trajectory Object
+#'
+#' A trajectory function does not exist by itself; rather, it requires the
+#' context about the trip it describes, as well as its inverse function. As
+#' such, `get_trajectory_fun()` returns an AVL trajectory object. If
+#' `return_group_function = TRUE` (the default), the function will return a
+#' single object containing:
+#'
+#' - A vector of `trip_id_performed`s, from the `trip_id`s found in `trips`.
+#'
+#' - A list of fit trajectory functions, indexed by their `trip_id_performed`.
+#'
+#' - A list of fit inverse trajectory functions, indexed by their
+#' `trip_id_performed`.
+#'
+#' - Information about how the trajectory and inverse trajectory functions were
+#' fit, including `interp_method`, `use_speeds`, and `inv_tol`.
+#'
+#' - A vector each for the minimum distances, maximum distances, minimum times,
+#' and maximum times of each trip. These inform the domain and range of the
+#' trajectory function and its inverse, preventing extrapolation beyond the
+#' time or distance range actually served by a trip.
+#'
+#' Alternatively, if `return_group_function = FALSE`, a separate trajectory
+#' object will be fit for each trip. `get_trajectory_fun()` will return a list
+#' of trajectory objects indexed by their `trip_id_performed`.
+#'
+#' More information about the trajectory object classes and how to use them is
+#' available at (xyz).
+#'
+#' @inheritParams get_stop_distances
+#' @inheritParams get_trajectory_fun
+#' @inheritParams make_monotonic
+#' @param date_min Optional. A date object. The earliest date in
+#' `calendar.txt` to create a trip trajectory for. Default is `NULL`, where the
+#' first date in `calendar.txt` will be used.
+#' @param date_max Optional. A date object. The latest date in
+#' `calendar.txt` to create a trip trajectory for. Default is `NULL`, where the
+#' last date in `calendar.txt` will be used.
+#' @param agency_timezone Optional. A timezone string (see `OlsonNames()`)
+#' indicating he appropriate timezone for the stop times. Default is `NULL`,
+#' where the timezone in `agency.txt` will be used.
+#' @param use_stop_time Optional. A string, which stop time column should be
+#' used for the timepoint? Must be one of `"arrival"` (use `arrival_time`),
+#' `"departure"` (use `departure_time`), or `"both"`,
+#' (timepoints will be created at both the stop arrival and departure). Default
+#' is `"departure"`.
+#' @param add_stop_dwell Optional. A numeric. If `use_stop_time = "both"`,
+#' but scheduled arrival and departure times are equal (i.e., no dwell), how
+#' many seconds of dwell should be added? This will adjust forward the
+#' `departure_time`. Default is 0.
+#' @param interp_method Optional. The type of interpolation function to be fit.
+#' Either `"linear"`, or a spline method from `stats::splinefun()`. Default is
+#' `"linear"`.
+#' @return If `return_group_function = TRUE`, a grouped trajectory object. If
+#' `FALSE`, a list of single trajectory objects, index by their
+#' `trip_id_performed`.
+get_gtfs_trajectory_fun <- function(gtfs,
+                                    shape_geometry = NULL, project_crs = 4326,
+                                    date_min = NULL, date_max = NULL,
+                                    agency_timezone = NULL,
+                                    use_stop_time = "departure",
+                                    add_stop_dwell = 0, add_distance_error = 0,
+                                    interp_method = "linear",
+                                    find_inverse_function = TRUE,
+                                    return_group_function = TRUE,
                                     inv_tol = 0.01) {
 
   # Get bounds for min & max date
   # Set to bounds of input data if not provided
   if (is.null(date_min)) {
-    date_min <- min(as.Date(route_gtfs$calendar$date))
+    date_min <- min(as.Date(gtfs$calendar$date))
   }
   if (is.null(date_max)) {
-    date_max <- max(as.Date(route_gtfs$calendar$date))
+    date_max <- max(as.Date(gtfs$calendar$date))
   }
   # If TZ not povided, pull from input GTFS
   if(is.null(agency_timezone)) {
-    agency_timezone <- route_gtfs$agency$agency_timezone[1]
+    agency_timezone <- gtfs$agency$agency_timezone[1]
   }
 
   # Get stop distances
-  stop_dist_df <- get_stop_distances(route_gtfs = route_gtfs,
+  stop_dist_df <- get_stop_distances(gtfs = gtfs,
                                      shape_geometry = shape_geometry,
                                      project_crs = project_crs)
 
   # Get time by desired schedule time
   if (use_stop_time == "departure") {
     # If using departure times, pull that
-    trip_timepoints <- route_gtfs$stop_times %>%
+    trip_timepoints <- gtfs$stop_times %>%
       dplyr::arrange(trip_id, stop_sequence) %>%
       dplyr::select(trip_id, stop_id, departure_time) %>%
       tidyr::pivot_longer(cols = c("departure_time"),
@@ -377,7 +500,7 @@ get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_c
                           values_to = "time")
   } else if (use_stop_time == "arrival") {
     # If using arrival times, pull that
-    trip_timepoints <- route_gtfs$stop_times %>%
+    trip_timepoints <- gtfs$stop_times %>%
       dplyr::arrange(trip_id, stop_sequence) %>%
       dplyr::select(trip_id, stop_id, departure_time) %>%
       tidyr::pivot_longer(cols = c("arrival_time"),
@@ -386,7 +509,7 @@ get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_c
   } else if (use_stop_time == "both") {
     # If using both, start by pulling dwell times
     # must make sure unique (time, distance) points -- if there are zero-second dwells, this won't be true
-    trip_dwells <- route_gtfs$stop_times %>%
+    trip_dwells <- gtfs$stop_times %>%
       dplyr::select(trip_id, stop_id, arrival_time, departure_time) %>%
       dplyr::mutate(dwell_time = as.numeric(difftime(departure_time, arrival_time, units = "secs")))
 
@@ -407,12 +530,12 @@ get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_c
 
         # Replace GTFS departure times with adjusted. Arrivals stay the same.
         # Correct in the provided GTFS object
-        route_gtfs$stop_times$departure_time <- trip_dwells_adj$departure_time
+        gtfs$stop_times$departure_time <- trip_dwells_adj$departure_time
       }
     }
 
     # Get corrected times (or uncorrected if it was not necessary)
-    trip_timepoints <- route_gtfs$stop_times %>%
+    trip_timepoints <- gtfs$stop_times %>%
       dplyr::arrange(trip_id, stop_sequence) %>%
       dplyr::select(trip_id, stop_id, arrival_time, departure_time) %>%
       tidyr::pivot_longer(cols = c("arrival_time", "departure_time"),
@@ -422,10 +545,10 @@ get_gtfs_trajectory_fun <- function(route_gtfs, shape_geometry = NULL, project_c
 
   # Get timetable, time-distance pairs
   trip_distances <- trip_timepoints %>%
-    dplyr::left_join(y = (route_gtfs$trips %>% dplyr::select(trip_id, shape_id, service_id)),
+    dplyr::left_join(y = (gtfs$trips %>% dplyr::select(trip_id, shape_id, service_id)),
                      by = "trip_id", relationship = "many-to-many") %>%
     dplyr::left_join(y = stop_dist_df, by = c("stop_id", "shape_id")) %>%
-    dplyr::left_join(y = (route_gtfs$calendar %>% dplyr::select(service_id, date)),
+    dplyr::left_join(y = (gtfs$calendar %>% dplyr::select(service_id, date)),
                      by = "service_id", relationship = "many-to-many") %>%
     dplyr::mutate(trip_id = paste(date, trip_id, sep = "-"),
                   date = as.Date(date)) %>%

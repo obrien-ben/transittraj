@@ -2,10 +2,10 @@
 % Please edit documentation in R/trajectory_constructors.R
 \name{get_gtfs_trajectory_fun}
 \alias{get_gtfs_trajectory_fun}
-\title{Fits a continuous function of distance versus time.}
+\title{Fits continuous interpolating curves for transit vehicle distance and time.}
 \usage{
 get_gtfs_trajectory_fun(
-  route_gtfs,
+  gtfs,
   shape_geometry = NULL,
   project_crs = 4326,
   date_min = NULL,
@@ -21,37 +21,168 @@ get_gtfs_trajectory_fun(
 )
 }
 \arguments{
-\item{route_gtfs}{A GTFS for a single route.}
+\item{gtfs}{A tidygtfs object.}
 
-\item{shape_geometry}{Optional. The SF (not shape_id) to use for distances. If NULL, each trip will be referenced to its assigned shape. Default is NULL.}
+\item{shape_geometry}{Optional. The SF object to project onto. Must include
+the field \code{shape_id}. See \code{get_shape_geometry()}. Default is NULL, where
+all shapes in \code{gtfs} will be used.}
 
-\item{project_crs}{Optional. A CRS numeric. The projection to use when performing spatial calculations (stops to routes). Consider setting to a Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS 84 ellipsoid).}
+\item{project_crs}{Optional. A numeric EPSG identifer indicating the
+coordinate system to use for spatial calculations. Consider setting to a
+Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS
+84 ellipsoid).}
 
-\item{date_min}{Optional. A date object. The earliest date, in calendar.txt, to create a trip trajectory for. Default is NULL, where the first date in calendar.txt will be used.}
+\item{date_min}{Optional. A date object. The earliest date in
+\code{calendar.txt} to create a trip trajectory for. Default is \code{NULL}, where the
+first date in \code{calendar.txt} will be used.}
 
-\item{date_max}{Optional. A date object. The latest date, in calendar.txt, to create a trip trajectory for. Default is NULL, where the final date in calendar.txt will be used.}
+\item{date_max}{Optional. A date object. The latest date in
+\code{calendar.txt} to create a trip trajectory for. Default is \code{NULL}, where the
+last date in \code{calendar.txt} will be used.}
 
-\item{agency_timezone}{Optional. A timezone string. The appropriate timezone for the stop times. Default is NULL, where the timezone in agency.txt will be used.}
+\item{agency_timezone}{Optional. A timezone string (see \code{OlsonNames()})
+indicating he appropriate timezone for the stop times. Default is \code{NULL},
+where the timezone in \code{agency.txt} will be used.}
 
-\item{use_stop_time}{Optional. A string. Which stop time column should be used for the timepoint? Must be one of "arrival" (use arrival_time), "departure" (use departure_time), or "both", (timepoints will be created at both the stop arrival and departure). Default is "departure".}
+\item{use_stop_time}{Optional. A string, which stop time column should be
+used for the timepoint? Must be one of \code{"arrival"} (use \code{arrival_time}),
+\code{"departure"} (use \code{departure_time}), or \code{"both"},
+(timepoints will be created at both the stop arrival and departure). Default
+is \code{"departure"}.}
 
-\item{add_stop_dwell}{Optional. A numeric. If using both arrival and departure times, but they are scheduled to be equal (i.e., no dwell), how many seconds of dwell should be added? This will adjust forward the departure_time. Default is 0.}
+\item{add_stop_dwell}{Optional. A numeric. If \code{use_stop_time = "both"},
+but scheduled arrival and departure times are equal (i.e., no dwell), how
+many seconds of dwell should be added? This will adjust forward the
+\code{departure_time}. Default is 0.}
 
-\item{add_distance_error}{Optional. A numeric. If > 0, will correct for strict monotonicty, if desired. See make_monotonic() and get_trajectory_fun(). Default is 0.}
+\item{add_distance_error}{Optional. If non-zero, each "flat" observation will
+be adjusted by this amount forwards, in units of input \code{distance}. Default is
+0.}
 
-\item{interp_method}{Optional. A string, Which interpolation method should be used? See get_trajectory_fun(). Default is "linear".}
+\item{interp_method}{Optional. The type of interpolation function to be fit.
+Either \code{"linear"}, or a spline method from \code{stats::splinefun()}. Default is
+\code{"linear"}.}
 
-\item{inv_tol}{Optional. A numeric. What is the tolerance for numeric inverse calculations? See get_trajectory_fun(). Default is 0.01.}
+\item{find_inverse_function}{Optional. A boolean, should the numeric inverse
+function (time ~ distance) be calculated? Default is \code{TRUE}.}
 
-\item{inverse_fun}{Optional. A boolean, should the inverse trajectory function (time ~ distance) be returned? See get_trajectory_fun(). Default is FALSE.}
+\item{return_group_function}{Optional. A boolean, should the returned
+trajectory object be grouped into a single function? If FALSE, will return a
+list (indexed by \code{trip_id_performed}) of single trajectory objects. Default
+is \code{TRUE}.}
 
-\item{return_single_fun}{Optional. A boolean, should a single function for all trips be returned (distance ~ f(trip, time))? See get_trajectory_fun(). Deafult is TRUE}
+\item{inv_tol}{Optional. A numeric in the units of input \code{distance}, the
+tolerance used when calculating the numeric inverse function. Default is
+0.01.}
 }
 \value{
-Either a single function, taking in trip, time, and derivative; or a list of single functions by trip, each taking in time and derivative.
+If \code{return_group_function = TRUE}, a grouped trajectory object. If
+\code{FALSE}, a list of single trajectory objects, index by their
+\code{trip_id_performed}.
 }
 \description{
-Uses scheduled stop times (via \code{stop_times}) to fit an interpolating scheduled trajectory.
-Trajectories will be created for each trip on each day, referenced to the time during that day.
-Operates via get_trajectory_fun(). See this for more details.
+This function fits a continuous vehicle trajectory function to scheduled GTFS
+\code{stop_times}, returning a trajectory object. Interpolation can be done
+linearly (\code{interp_method = "linear"}), or via any method supported by
+\code{stats::splinefun()}.
+}
+\details{
+\subsection{Stops, Dwells, and Monotonicity}{
+
+To fit an interpolating trajectory function, each observation must include
+distance and timestamp pairs throughout each trip. While \code{stop_times} does
+include a \code{shape_dist_traveled} field, this is optional and often left
+empty by agencies. Additionally, small distortions in spatial projections
+mean that projected GPS points may not align perfectly with the agency's
+calculated \code{shape_dist_traveled}. As such, this function uses
+\code{get_stop_distances()} to get the distance of each stop along each shape for
+each trip. Alternatively, all stops and trips can be referenced to the
+same spatial feature using \code{shape_geometry}. Consider setting \code{project_crs}
+to the same spatial projection used to linearize AVL GPS points.
+
+The trajectory functions are fit using the times a trip is scheduled to
+serve each stop. There is some ambiguity here: should a stop's timestamp
+be when the vehicle arrives, or departs? This can be controlled using
+\code{use_stop_time}, set to \code{"departure"} for \code{departure_time}, \code{"arrival"} for
+\code{arrival_time}, or \code{"both"} to include both \code{departure_time} and
+\code{arrival_time} as distinct observations (i.e., distance & timestamp pairs).
+
+Often times, however, a GTFS schedule will not have different \code{arrival_time}
+and \code{departure_time} values, especially if the timetable was not developed
+considering stop-level dwell times. In this scenario, it may be best to use
+only one of \code{departure_time} or \code{arrival_time}. If a dwell is desired, use
+\code{add_stop_dwell} to simulate a dwell time at each stop. This will increase
+the \code{departure_time} by the number of seconds specified.
+
+Adding dwells opens a new consideration, however: the trajectory will no
+longer be strictly monotonic, as the vehicle will hold at a constant distance
+for some period of time. This is only a concern if
+\code{find_inverse_function = TRUE}, which requires strictly monotonic input data.
+If both dwell times and an inverse function are desired, consider setting
+\code{add_distance_error > 0} to restore strict monotonicity. See
+\code{make_monotonic()} for more details.
+}
+
+\subsection{Interpolating Methods}{
+
+The goal of this function is to fit a continuous function representing a
+GTFS trip's scheduled distance traveled as a function of time. This
+function supports to types of interpolating curves:
+\itemize{
+\item Linear interpolation, for \code{interp_method = "linear"}. This will fit a
+simple linear function, ignorant of recorded \code{speed} values.
+\item Spline interpolation, for \code{interp_method} set to any method supported by
+\code{stats::splinefun()} (i.e., \code{"fmm"}, \code{"natural"}, \code{"periodic"}, \code{"monoH.FC"},
+or \code{"hyman"}.)
+}
+
+By default, \code{interp_method = linear}, and linear interpolation is the
+recommended method for schedule trajectories. This is because timetable
+development typically assumes a constant running speed over a corridor, so
+linearly connecting stop times will best reflect a trip's scheduled
+trajectory.
+}
+
+\subsection{Inverse Functions}{
+
+Often times, we are concerned not with the position of a vehicle at a
+particular time, but when a vehicle crosses a specific point in space. This
+can be accomplished by computing an inverse trajectory function. If
+\code{find_inverse_function = TRUE} (the default), a numeric inverse to the fit
+trajectory function will be found, with a tolerance controlled by \code{inv_tol}.
+
+Because the inverse function is numerical, it can be found for any type of
+interpolating curve (linear or spline). However, the input data must be
+strictly monotonic for the trajectory curve to be invertible. If
+\code{find_inverse_function = TRUE}, this will be verified before proceeding (see
+\code{validate_monotonicity()}).
+}
+
+\subsection{The Trajectory Object}{
+
+A trajectory function does not exist by itself; rather, it requires the
+context about the trip it describes, as well as its inverse function. As
+such, \code{get_trajectory_fun()} returns an AVL trajectory object. If
+\code{return_group_function = TRUE} (the default), the function will return a
+single object containing:
+\itemize{
+\item A vector of \code{trip_id_performed}s, from the \code{trip_id}s found in \code{trips}.
+\item A list of fit trajectory functions, indexed by their \code{trip_id_performed}.
+\item A list of fit inverse trajectory functions, indexed by their
+\code{trip_id_performed}.
+\item Information about how the trajectory and inverse trajectory functions were
+fit, including \code{interp_method}, \code{use_speeds}, and \code{inv_tol}.
+\item A vector each for the minimum distances, maximum distances, minimum times,
+and maximum times of each trip. These inform the domain and range of the
+trajectory function and its inverse, preventing extrapolation beyond the
+time or distance range actually served by a trip.
+}
+
+Alternatively, if \code{return_group_function = FALSE}, a separate trajectory
+object will be fit for each trip. \code{get_trajectory_fun()} will return a list
+of trajectory objects indexed by their \code{trip_id_performed}.
+
+More information about the trajectory object classes and how to use them is
+available at (xyz).
+}
 }
