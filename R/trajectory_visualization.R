@@ -285,11 +285,12 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
     show_legend_featureshape <- feature_shape_list[[2]]
     feature_shape_by <- feature_shape_list[[3]]
     feature_shape_vals <- feature_shape_list[[4]]
+
     # Label setup
     if (!is.null(label_field)) {
       # Check that requested field is in feature DF
       if (!(label_field %in% names(feature_distances))) {
-        rlang::abort(message = "feature_distances: label_field not found in field names",
+        rlang::abort(message = "feature_distances: label_field not found in field names.",
                      class = "error_trajanim_formatting")
       }
       # Label position setup
@@ -302,7 +303,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
         label_just = "left"
         x_lims <- c(0, 1)
       } else {
-        rlang::abort(message = "Unknown label position. Please enter \"left\" or \"right\".",
+        rlang::abort(message = "Unknown label_pos. Please enter \"left\" or \"right\".",
                      class = "error_trajanim_formatting")
       }
     } else {
@@ -801,31 +802,34 @@ plot_format_setup <- function(plotting_df,
     temp_attr_name <- paste("temp_", attribute_name, sep = "")
     show_legend <- "none"
     plotting_df <- plotting_df %>%
-      dplyr::mutate(temp_attr_name = "1")
+      dplyr::mutate(!!rlang::sym(temp_attr_name) := "1")
     attribute_by <- temp_attr_name
     attribute_vals <- c(attribute_input)
     names(attribute_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all plotting_df the same color
-  } else if ("outline" %in% names(attribute_input)) {
+  } else if (attribute_type %in% names(attribute_input)) {
     show_legend <- "legend"
-    input_names <- names(attribute_input)
+    attr_df_names <- names(attribute_input)
+    plotting_names <- names(plotting_df)
 
     # Match outline to a vehicle location data type
-    attribute_by <- plotting_df[!is.na(match(names(plotting_df),
-                                             input_names))]
+    attribute_by <- plotting_names[!is.na(match(plotting_names,
+                                                attr_df_names))]
     # Check attribute_by -- should be exaclty one matching column
-    if (length(attribute_by > 1)) {
+    if (length(attribute_by) > 1) {
       rlang::abort(message = paste(attribute_name, ": multiple columns match input data. Only one column can match.",
                                    sep = ""),
                    class = "error_trajanim_format")
-    } else if (length(attribute_by == 0)) {
-      rlang::abort(message = paste(attribute_name, ": no columns match input data. One must column can match.",
+    } else if (length(attribute_by) == 0) {
+      rlang::abort(message = paste(attribute_name, ": no columns match input data. One column must match.",
                                    sep = ""),
                    class = "error_trajanim_format")
     }
     attribute_vals <- as.character(attribute_input[[attribute_type]])
-    names(attribute_vals) <- as.character(outline_input[[attribute_by]])
+    names(attribute_vals) <- as.character(attribute_input[[attribute_by]])
   } else {
-    stop("veh_outline dataframe: outline column not provided")
+    rlang::abort(message = paste(attribute_name, ": ", attribute_type, " column not provided.",
+                                 sep = ""),
+                 class = "error_trajanim_format")
   }
 
   return(list(plotting_df,
