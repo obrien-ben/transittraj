@@ -792,9 +792,9 @@ plot_anim_df_setup <- function(trajectory, distance_df,
 #' "outline")
 #' @param attribute_name The name of the attribute (e.g., "veh_outline")
 plot_format_setup <- function(plotting_df,
-                                   attribute_input,
-                                   attribute_type,
-                                   attribute_name) {
+                              attribute_input,
+                              attribute_type,
+                              attribute_name) {
 
   if (!is.data.frame(attribute_input)) {
     temp_attr_name <- paste("temp_", attribute_name, sep = "")
