@@ -138,21 +138,28 @@ validate_monotonicity <- function(distance_df, check_speed = FALSE,
                     is_fc_speed = (round(sum_sq, 5) <= 9),
                     is_fc_speed = tidyr::replace_na(is_fc_speed, TRUE)) %>%
       dplyr::select(trip_id_performed, event_timestamp, distance, is_fc_speed)
-  } else {
-    speed_check <- NA
   }
 
   if (return_full) {
-    check_df <- check_mon %>%
-      dplyr::left_join(y = check_speed_mon, by = c("trip_id_performed", "event_timestamp", "distance")) %>%
-      dplyr::mutate(all_ok = (is_weak & is_strict & is_fc_speed))
+    if (check_speed) {
+      check_df <- check_mon %>%
+        dplyr::left_join(y = check_speed_mon, by = c("trip_id_performed", "event_timestamp", "distance")) %>%
+        dplyr::mutate(all_ok = (is_weak & is_strict & is_fc_speed))
+    } else {
+      check_df <- check_mon %>%
+        dplyr::mutate(all_ok = (is_weak & is_strict))
+    }
 
     return(check_df)
   } else {
     # Check that all points satisfy conditions
     weak_check <- all(check_mon$is_weak)
     strict_check <- all(check_mon$is_strict)
-    speed_check <- all(check_speed_mon$is_fc_speed)
+    if (check_speed) {
+      speed_check <- all(check_speed_mon$is_fc_speed)
+    } else {
+      speed_check <- NA
+    }
 
     # Combine all checks into named vector
     check_results <- c("weak" = weak_check,
