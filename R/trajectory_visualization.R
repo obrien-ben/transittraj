@@ -1,11 +1,18 @@
-#' Generate an animated plot of a vehicle along a straight line.
+#' Animate vehicle trajectory or AVL data.
 #'
 #' @description
-#' This function simplifies trajectories to a single straight line. Animations
-#' are used to show vehicles' progressing along this line. Optionally, spatial
-#' "features" and labels can be added as points along the route line. A
-#' gganimate object is returned, which can be further modified and customized as
-#' desired.
+#' These functions use the input trajectory object or TIDES AVL data to animate
+#' vehicles progressing along their routes. This can be visualized in two ways:
+#'
+#' - `plot_animated_line()` simplifies the route alignment into a single
+#' straight line and shows the vehicles moving down this line.
+#'
+#' - `plot_animated_map()` plots the full route's alignment and shows the
+#' vehicles moving through space.
+#'
+#' Both functions allow the plotting of spatial features and labels for these
+#' features. A `gganimate` object is returned, which can be further modified
+#' and customized as desired.
 #'
 #' @details
 #'
@@ -13,18 +20,18 @@
 #'
 #' There are two ways to provide data to these plotting functions:
 #'
-#' - A single or grouped trajectory function. This will use the direct
+#' - A single or grouped trajectory object. This will use the direct
 #' trajectory function at a resolution controlled by `timestep`. This is
-#' simplest, and looks best when zooming in useing `distance_lim`. The only
+#' simplest, and looks best when zooming in using `distance_lim`. The only
 #' attribute that can be mapped to if using a trajectory is `trip_id_performed`.
 #'
 #' - A `distance_df` of TIDES AVL data. This will use the distance and time
 #' point pairs for plotting, and draw linearly between them. This will look
 #' similar to a plot using `trajectory` when zoomed out. It is most useful
 #' if you want to map formatting to attributes other than `trip_id_performed`,
-#' such as a vehicle or operator ID number. If starting with a `trajectory`,
+#' such as a vehicle or operator ID. If starting with a `trajectory`,
 #' but the additional controll over formatting is desired, consider using
-#' `predict()` to find generate distance and time points to plot, then joining
+#' `predict()` to generate distance and time points to plot, then joining
 #' the desired attributes to the `trip_id_performed` column.
 #'
 #' Note that only one of `trajectory` and `distance_df` can be used. If both
@@ -41,12 +48,19 @@
 #' These features can also be labeled. Set `label_name` to a character string
 #' corresponding to a field in `feature_distances` to generate labels with
 #' this field as their text. The color of the label will automatically match
-#' that of the feature they describe. Labels will be placed at the y-value
-#' of the feature, and the horizontal alignment can be controlled with
-#' `label_pos`.
+#' that of the feature they describe. The label placement is controlled by
+#' `label_pos`, which has the following options available:
 #'
-#' To retrieve distance values for features, see `get_stop_distances()` and
-#' `project_onto_route()`.
+#' - `plot_animated_line()`: Either `"left"` or `"right"` of the route line. The
+#' y-value will be that of the feature it describes.
+#'
+#' - `plot_animated_map()`. A cardinal or intermediate direction (`"N"`,
+#' `"SE"`, etc.) relative to the feature point. Or, `"in"`/`"out"`, relative to
+#' the center of the plot.
+#'
+#' Note that for `plot_animated_map()` the `feature_distances` must still be
+#' linear distances, not a spatial datatype. To retrieve distance values for
+#' spatial features, see `get_stop_distances()` and `project_onto_route()`.
 #'
 #' ## Formatting Options
 #'
@@ -88,13 +102,43 @@
 #' `distance_df`, they may be mapped to any column in `distance_df` (e.g.,
 #' vehicle or operator IDs).
 #'
+#' ## Basemaps
+#'
+#' The function `plot_animated_map()` has one additional layer to format: the
+#' basemap beneath the route alignment. OpenStreetMaps basemaps are used here.
+#' See a full list of available basemaps using `rosm::osm.image()`.
+#'
+#' In addition to the map itself, the zoom level on the map can be
+#' adjusted using `background_zoom`. This will describe a zoom level relative
+#' to the "correct" level of your bounding box (i.e., what you what see if
+#' you looked at that data in an online mapping platform). Setting to a
+#' negative value (zooming out) will substantially speed up rendering, but will
+#' give a much lower resolution may.
+#'
+#' Finally, the bounding box of the basemap can also be set. The bounding
+#' box is defined relative to the spatial range of `trajectory` or
+#' `distance_df`. The default is expansion is 0.05% (0.0025% for
+#' `distance_lim != NULL`) of the larger dimension (northing or easting) of the
+#' vehicle location bounding box. To customize, det `bbox_expand` to some
+#' numeric in the distance units of the `shape_geometry`'s spatial
+#' projection (e.g., meters if using a UTM projection).
+#'
 #' For examples and a more in-depth discussion, see (xyz).
 #'
+#' @param shape_geometry An SF object representing the route alignment. See
+#' `get_shape_geometry()`.
+#' @param background The OSM background (basemap) for the animation. See
+#' `rosm::osm.image()`. Default is `"cartolight"`.
+#' @param background_zoom Optional. The zoom, relative to the "correct" level,
+#' for the background basemap. Default is 0.
+#' @param bbox_expand Optional. The distance by which to expand the plotting
+#' window in both directions. Default is `NULL`, which will expand the window by
+#' 0.05% of the larger dimension (or 0.0025% if `distance_lim` is provided).
 #' @param trajectory Optional. A trajectory object, either a single trajectory
 #' or grouped trajectory. If provided, `distance_df` must not be provided.
 #' Default is `NULL`.
 #' @param distance_df Optional. A dataframe of time and distance points. Must
-#' include at least `event_timestamp` and numeric `distance`. If provided,
+#' include at least `event_timestamp` and `distance`. If provided,
 #' `trajectory` must not be provided. Default is `NULL`.
 #' @param plot_trips Optional. A vector of `trip_id_performed`s to plot. Default
 #' is `NULL`, which will plot all trips provided in the `trajectory` or
@@ -110,14 +154,14 @@
 #' @param transition_style Optional. A `gganimate` `transition_style`,
 #' specifying how the animation transitions from point to point. See
 #' `gganimate::ease_aes()`. Default is `"linear"`.
-#' @param route_color Optional. A color string for the color of the background
-#' route. Default is `"coral"`.
-#' @param route_width Optional. A numeric, the linewidth of the background
-#' route. Default is 3.
-#' @param route_alpha Optional. A numeric, the opacity of the background route.
+#' @param route_color Optional. A color string for the color of the route
+#' alignment. Default is `"coral"`.
+#' @param route_width Optional. A numeric, the linewidth of the route
+#' alignment. Default is 3.
+#' @param route_alpha Optional. A numeric, the opacity of the route alignment.
 #' Default is 1.
 #' @param feature_shape Optional. A numeric specifying the `ggplot2` point
-#' shape, or a dataframe mapping an attribute in feature_distances to a shape.
+#' shape, or a dataframe mapping an attribute in `feature_distances` to a shape.
 #' Must contain column `shape`. Default is 21 (circle).
 #' @param feature_outline Optional. A color string, or a dataframe mapping an
 #' attribute in `feature_distances` to a color. Must contain column `outline`.
@@ -142,7 +186,7 @@
 #' is 3.
 #' @param veh_stroke Optional. A numeric, the linewidth of the vehicle point
 #' outline. Default is 2.
-#' @param veh_alpha Optional. A numeric, the opacity of the feature point.
+#' @param veh_alpha Optional. A numeric, the opacity of the vehicle point.
 #' Default is 0.8.
 #' @param label_field Optional. A string specifying the column in
 #' `feature_distances` with which to label the feature lines. Default is `NULL`,
@@ -152,8 +196,11 @@
 #' @param label_alpha Optional. The opacity of the feature labels. Default is
 #' 0.6.
 #' @param label_pos Optional. A string specifying the label position on the
-#' graph. Must be either `"left"` or `"right"`. Default is `"left"`.
-#' @returns A gganimate object.
+#' graph. Options include:
+#' - `plot_animated_line()`: `"left"` or `"right"`. Default is `"left"`.
+#' - `plot_animated_map()`: cardinal or intermediate direction (e.g.,
+#' `"N"`, `"SW"`, etc.), or `"in"`/`"out"`. Default is `"out"`.
+#' @returns A `gganimate` object.
 #' @export
 plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips = NULL,
                                timestep = 5, distance_lim = NULL, center_vehicles = FALSE,
@@ -430,33 +477,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
   return(bus_plot)
 }
 
-#' Generate an animated vehicle map along a route's alignment.
-#'
-#' @description
-#'
-#'
-#' @details
-#'
-#'
-#' @inheritParams plot_animated_line
-#' @param shape_geometry An SF object representing the route alignment. See
-#' `get_shape_geometry()`.
-#' @param background The OSM background (basemap) for the animation. See
-#' `rosm::osm.image()`. Default is `"cartolight"`.
-#' @param background_zoom Optional. The zoom, relative to the "correct" level,
-#' for the background basemap. Default is 0, which will use the zoom most
-#' appropriate for the input spatial data. Entering a negative number will
-#' yield a lower resolution, "zoomed out" basemap, substantially speeding up
-#' rendering.
-#' @param bbox_expand Optional. The distance, in the units of the
-#' `shape_geometry` CRS (e.g., meters if UTM), by which to expand the plotting
-#' window in both directions. Default is `NULL`, which will expand the window by
-#' 0.05% of the larger dimension (or 0.0025% if `distance_lim` is provided).
-#' @param label_pos Optional. A string specifying the label position on the
-#' map. Must be an abbreviated cardinal or intermediate direction (e.g.,
-#' `"N"`, `"SW"`, etc.), or `"in"` or `"out"`. Default is `"out"`.
-#' @returns A gganimate object.
-#' @export
+#' @rdname plot_animated_line
 plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = NULL,
                               plot_trips = NULL, timestep = 5, distance_lim = NULL,
                               center_vehicles = FALSE, feature_distances = NULL,

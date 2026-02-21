@@ -2,7 +2,8 @@
 % Please edit documentation in R/trajectory_visualization.R
 \name{plot_animated_line}
 \alias{plot_animated_line}
-\title{Generate an animated plot of a vehicle along a straight line.}
+\alias{plot_animated_map}
+\title{Animate a vehicle trajectory or AVL data}
 \usage{
 plot_animated_line(
   trajectory = NULL,
@@ -33,6 +34,40 @@ plot_animated_line(
   label_alpha = 0.6,
   label_pos = "left"
 )
+
+plot_animated_map(
+  shape_geometry,
+  trajectory = NULL,
+  distance_df = NULL,
+  plot_trips = NULL,
+  timestep = 5,
+  distance_lim = NULL,
+  center_vehicles = FALSE,
+  feature_distances = NULL,
+  background = "cartolight",
+  background_zoom = 0,
+  bbox_expand = NULL,
+  transition_style = "linear",
+  route_color = "coral",
+  route_width = 3,
+  route_alpha = 1,
+  feature_shape = 21,
+  feature_outline = "black",
+  feature_fill = "white",
+  feature_size = 2,
+  feature_stroke = 1.25,
+  feature_alpha = 1,
+  veh_shape = 23,
+  veh_outline = "grey30",
+  veh_fill = "white",
+  veh_size = 3,
+  veh_stroke = 2,
+  veh_alpha = 0.8,
+  label_field = NULL,
+  label_size = 3,
+  label_alpha = 0.6,
+  label_pos = "out"
+)
 }
 \arguments{
 \item{trajectory}{Optional. A trajectory object, either a single trajectory
@@ -40,7 +75,7 @@ or grouped trajectory. If provided, \code{distance_df} must not be provided.
 Default is \code{NULL}.}
 
 \item{distance_df}{Optional. A dataframe of time and distance points. Must
-include at least \code{event_timestamp} and numeric \code{distance}. If provided,
+include at least \code{event_timestamp} and \code{distance}. If provided,
 \code{trajectory} must not be provided. Default is \code{NULL}.}
 
 \item{plot_trips}{Optional. A vector of \code{trip_id_performed}s to plot. Default
@@ -63,17 +98,17 @@ centered to start at the same time (0 seconds)? Default is \code{FALSE}.}
 specifying how the animation transitions from point to point. See
 \code{gganimate::ease_aes()}. Default is \code{"linear"}.}
 
-\item{route_color}{Optional. A color string for the color of the background
-route. Default is \code{"coral"}.}
+\item{route_color}{Optional. A color string for the color of the route
+alignment. Default is \code{"coral"}.}
 
-\item{route_width}{Optional. A numeric, the linewidth of the background
-route. Default is 3.}
+\item{route_width}{Optional. A numeric, the linewidth of the route
+alignment. Default is 3.}
 
-\item{route_alpha}{Optional. A numeric, the opacity of the background route.
+\item{route_alpha}{Optional. A numeric, the opacity of the route alignment.
 Default is 1.}
 
 \item{feature_shape}{Optional. A numeric specifying the \code{ggplot2} point
-shape, or a dataframe mapping an attribute in feature_distances to a shape.
+shape, or a dataframe mapping an attribute in \code{feature_distances} to a shape.
 Must contain column \code{shape}. Default is 21 (circle).}
 
 \item{feature_outline}{Optional. A color string, or a dataframe mapping an
@@ -109,7 +144,7 @@ is 3.}
 \item{veh_stroke}{Optional. A numeric, the linewidth of the vehicle point
 outline. Default is 2.}
 
-\item{veh_alpha}{Optional. A numeric, the opacity of the feature point.
+\item{veh_alpha}{Optional. A numeric, the opacity of the vehicle point.
 Default is 0.8.}
 
 \item{label_field}{Optional. A string specifying the column in
@@ -123,34 +158,59 @@ where no labels will be plotted.}
 0.6.}
 
 \item{label_pos}{Optional. A string specifying the label position on the
-graph. Must be either \code{"left"} or \code{"right"}. Default is \code{"left"}.}
+graph. Options include:
+\itemize{
+\item \code{plot_animated_line()}: \code{"left"} or \code{"right"}. Default is \code{"left"}.
+\item \code{plot_animated_map()}: cardinal or intermediate direction (e.g.,
+\code{"N"}, \code{"SW"}, etc.), or \code{"in"}/\code{"out"}. Default is \code{"out"}.
+}}
+
+\item{shape_geometry}{An SF object representing the route alignment. See
+\code{get_shape_geometry()}.}
+
+\item{background}{The OSM background (basemap) for the animation. See
+\code{rosm::osm.image()}. Default is \code{"cartolight"}.}
+
+\item{background_zoom}{Optional. The zoom, relative to the "correct" level,
+for the background basemap. Default is 0.}
+
+\item{bbox_expand}{Optional. The distance by which to expand the plotting
+window in both directions. Default is \code{NULL}, which will expand the window by
+0.05\% of the larger dimension (or 0.0025\% if \code{distance_lim} is provided).}
 }
 \value{
-A gganimate object.
+A \code{gganimate} object.
 }
 \description{
-This function simplifies trajectories to a single straight line. Animations
-are used to show vehicles' progressing along this line. Optionally, spatial
-"features" and labels can be added as points along the route line. A
-gganimate object is returned, which can be further modified and customized as
-desired.
+These functions use the input trajectory object or TIDES AVL data to animate
+vehicles progressing along their routes. This can be visualized in two ways:
+\itemize{
+\item \code{plot_animated_line()} simplifies the route alignment into a single
+straight line and shows the vehicles moving down this line.
+\item \code{plot_animated_map()} plots the full route's alignment and shows the
+vehicles moving through space.
+}
+
+Both functions allow the plotting of spatial features and labels for these
+features. A \code{gganimate} object is returned, which can be further modified
+and customized as desired.
 }
 \details{
 \subsection{Input Trajectory Data}{
 
 There are two ways to provide data to these plotting functions:
 \itemize{
-\item A single or grouped trajectory function. This will use the direct
+\item A single or grouped trajectory object. This will use the direct
 trajectory function at a resolution controlled by \code{timestep}. This is
-simplest, and looks best when zooming in useing \code{distance_lim}. The only
+simplest, and looks best when zooming in using \code{distance_lim}. The only
 attribute that can be mapped to if using a trajectory is \code{trip_id_performed}.
 \item A \code{distance_df} of TIDES AVL data. This will use the distance and time
 point pairs for plotting, and draw linearly between them. This will look
 similar to a plot using \code{trajectory} when zoomed out. It is most useful
 if you want to map formatting to attributes other than \code{trip_id_performed},
-such as a vehicle or operator ID number. If starting with a \code{trajectory},
+such as a vehicle or operator ID. If starting with a \code{trajectory},
 but the additional controll over formatting is desired, consider using
-\code{predict()} to find generate distance and time points to plot, then joining
+\code{predict()} to generate distance and time points to plot, then joining
 the desired attributes to the \code{trip_id_performed} column.
 }
 
@@ -169,9 +229,19 @@ Each of these rows will be plotted as a point on the route line.
 These features can also be labeled. Set \code{label_name} to a character string
 corresponding to a field in \code{feature_distances} to generate labels with
 this field as their text. The color of the label will automatically match
-that of the feature they describe. Labels will be placed at the y-value
-of the feature, and the horizontal alignment can be controlled with
-\code{label_pos}.
+that of the feature they describe. The label placement is controlled by
+\code{label_pos}, which has the following options available:
+\itemize{
+\item \code{plot_animated_line()}: Either \code{"left"} or \code{"right"} of the route line. The
+y-value will be that of the feature it describes.
+\item \code{plot_animated_map()}. A cardinal or intermediate direction (\code{"N"},
+\code{"SE"}, etc.) relative to the feature point. Or, \code{"in"}/\code{"out"}, relative to
+the center of the plot.
+}
+
+Note that for \code{plot_animated_map()} the \code{feature_distances} must still be
+linear distances, not a spatial datatype. To retrieve distance values for
+spatial features, see \code{get_stop_distances()} and \code{project_onto_route()}.
 }
 
 \subsection{Formatting Options}{
@@ -211,6 +281,28 @@ Note that if inputting \code{trajectory}, instead of \code{distance_df}, \code{v
 and \code{veh_outline} can only be mapped to \code{trip_id_performed}. If using
 \code{distance_df}, they may be mapped to any column in \code{distance_df} (e.g.,
 vehicle or operator IDs).
+}
+
+\subsection{Basemaps}{
+
+The function \code{plot_animated_map()} has one additional layer to format: the
+basemap beneath the route alignment. OpenStreetMaps basemaps are used here.
+See a full list of available basemaps using \code{rosm::osm.image()}.
+
+In addition to the map itself, the zoom level on the map can be
+adjusted using \code{background_zoom}. This will describe a zoom level relative
+to the "correct" level of your bounding box (i.e., what you what see if
+you looked at that data in an online mapping platform). Setting to a
+negative value (zooming out) will substantially speed up rendering, but will
+give a much lower resolution may.
+
+Finally, the bounding box of the basemap can also be set. The bounding
+box is defined relative to the spatial range of \code{trajectory} or
+\code{distance_df}. The default is expansion is 0.05\% (0.0025\% for
+\code{distance_lim != NULL}) of the larger dimension (northing or easting) of the
+vehicle location bounding box. To customize, det \code{bbox_expand} to some
+numeric in the distance units of the \code{shape_geometry}'s spatial
+projection (e.g., meters if using a UTM projection).
 
 For examples and a more in-depth discussion, see (xyz).
 }
