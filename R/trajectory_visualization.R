@@ -312,9 +312,9 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
   }
 
   # Generate plot of routeline
-  bus_plot <- ggplot() +
+  bus_plot <- ggplot2::ggplot() +
     # Add route line
-    ggplot2::geom_line(data = route_df, aes(y = distance, x = x),
+    ggplot2::geom_line(data = route_df, ggplot2::aes(y = distance, x = x),
                        linewidth = route_width, color = route_color, alpha = route_alpha)
 
   # Add features
@@ -322,8 +322,8 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
     bus_plot <- bus_plot +
       ggplot2::geom_point(data = feature_distances,
                           ggplot2::aes(y = distance, x = x,
-                                       color = factor(!!ensym(feature_outline_by)),
-                                       shape = factor(!!ensym(feature_shape_by))),
+                                       color = factor(!!sym(feature_outline_by)),
+                                       shape = factor(!!sym(feature_shape_by))),
                           size = feature_size, stroke = feature_stroke,
                           fill = feature_fill, alpha = feature_alpha) +
       ggplot2::scale_color_manual(name = feature_outline_by,
@@ -337,9 +337,9 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
     if (!is.null(label_field)) {
       bus_plot <- bus_plot +
         ggplot2::geom_label(data = feature_distances,
-                            aes(x = 0, y = distance,
-                                label = !!ensym(label_field),
-                                color = factor(!!ensym(feature_outline_by))),
+                            ggplot2::aes(x = 0, y = distance,
+                                         label = !!sym(label_field),
+                                         color = factor(!!sym(feature_outline_by))),
                             hjust = label_just,
                             nudge_x = label_nudge,
                             alpha = label_alpha, size = label_size,
@@ -353,8 +353,8 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
     ggnewscale::new_scale("shape") +
     ggplot2::geom_point(data = trips_df,
                         ggplot2::aes(y = distance, x = x, group = trip_id_performed,
-                                     color = factor(!!ensym(veh_outline_by)),
-                                     shape = factor(!!ensym(veh_shape_by))),
+                                     color = factor(!!sym(veh_outline_by)),
+                                     shape = factor(!!sym(veh_shape_by))),
                         size = veh_size, stroke = veh_stroke,
                         fill = veh_fill, alpha = veh_alpha) +
     ggplot2::scale_color_manual(name = veh_outline_by,

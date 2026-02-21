@@ -337,7 +337,8 @@ clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
                   ignore_observation = is_implosion | is_tail,
                   mad_ok = abs(med_dist) < (t_cutoff * window_mad),
                   dev_ok = (med_dist >= min_median_deviation) & (med_dist <= max_median_deviation),
-                  all_ok = ((mad_ok & dev_ok) | ignore_observation))
+                  all_ok = ((mad_ok & dev_ok) | ignore_observation)) %>%
+    dplyr::ungroup()
 
   if (return_removals) {
     removals_df <- medians_df %>%
@@ -353,13 +354,15 @@ clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
                                          true = distance,
                                          false = window_med)) %>%
         dplyr::select(-c(window_med, window_mad, med_dist,
-                         is_tail, is_implosion, ignore_observation, mad_ok, dev_ok, all_ok))
+                         is_tail, is_implosion, ignore_observation,
+                         mad_ok, dev_ok, all_ok))
       return(replaced_df)
     } else {
       filt_df <- medians_df %>%
         dplyr::filter(all_ok) %>%
         dplyr::select(-c(window_med, window_mad, med_dist,
-                         is_tail, is_implosion, ignore_observation, mad_ok, dev_ok, all_ok))
+                         is_tail, is_implosion, ignore_observation,
+                         mad_ok, dev_ok, all_ok))
       return(filt_df)
     }
   }

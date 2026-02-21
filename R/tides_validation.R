@@ -66,15 +66,15 @@ validate_tides <- function(avl_df) {
   # Get if each column is present in DF
   cols_present_bool <- required_columns %in% names(avl_df)
 
-  # Get if datatypes match
-  cols_types <- c(class(avl_df$location_ping_id)[1],
-                  class(avl_df$trip_id_performed)[1],
-                  class(avl_df$event_timestamp)[1],
-                  class(avl_df$vehicle_id)[1],
-                  class(avl_df$operator_id)[1],
-                  class(avl_df$longitude)[1], class(avl_df$latitude)[1],
-                  class(avl_df$distance)[1],
-                  class(avl_df$speed)[1])
+  # Check data types
+  cols_types <- sapply(required_columns, FUN = function(current_col) {
+    if (current_col %in% names(avl_df)) {
+      return(class(avl_df[[current_col]])[1])
+    } else {
+      return(NA)
+    }
+  })
+  names(cols_types) <- NULL
   cols_types_bool <- cols_types == required_data_types
 
   # Compile results into DF

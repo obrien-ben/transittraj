@@ -62,8 +62,8 @@ validate_shape_geometry <- function(shape_geometry,
                                     match_crs = NULL) {
 
   # Check class
-  if (!("sf" %in% shape_geometry)) {
-    if ("sfc" %in% shape_geometry) {
+  if (!("sf" %in% class(shape_geometry))) {
+    if ("sfc" %in% class(shape_geometry)) {
       rlang::abort(message = "SFC provided for shape_geometry. Please input SF object.",
                    class = "error_geomval_datatype")
     } else {
