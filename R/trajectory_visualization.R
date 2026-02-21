@@ -223,6 +223,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
   # Validate input data & set up feature & vehicle location DFs to plot
   val_data <- plot_anim_df_setup(trajectory = trajectory,
                                  distance_df = distance_df,
+                                 timestep = timestep,
                                  plot_trips = plot_trips,
                                  feature_distances = feature_distances,
                                  distance_lim = distance_lim,
@@ -417,6 +418,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
   # Validate input data & set up feature & vehicle location DFs to plot
   val_data <- plot_anim_df_setup(trajectory = trajectory,
                                  distance_df = distance_df,
+                                 timestep = timestep,
                                  plot_trips = plot_trips,
                                  feature_distances = feature_distances,
                                  distance_lim = distance_lim,
@@ -691,6 +693,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
 #' @return plotting dataframe (trips_df)
 plot_anim_df_setup <- function(trajectory, distance_df,
                                plot_trips,
+                               timestep,
                                distance_lim,
                                feature_distances,
                                center_vehicles) {
@@ -824,7 +827,7 @@ plot_format_setup <- function(plotting_df,
                                    sep = ""),
                    class = "error_trajanim_format")
     }
-    attribute_vals <- as.character(attribute_input[[attribute_type]])
+    attribute_vals <- attribute_input[[attribute_type]]
     names(attribute_vals) <- as.character(attribute_input[[attribute_by]])
   } else {
     rlang::abort(message = paste(attribute_name, ": ", attribute_type, " column not provided.",

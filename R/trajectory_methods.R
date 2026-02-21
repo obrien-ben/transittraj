@@ -550,7 +550,7 @@ plot.avltrajectory_single <- function(x, ...) {
   plot_df <- predict(object = x, new_times = plot_seq) %>%
     dplyr::rename(distance = interp)
 
-  # Creaet & return plot
+  # Create & return plot
   traj_plot <- ggplot2::ggplot(data = plot_df) +
     ggplot2::geom_line(ggplot2::aes(x = event_timestamp, y = distance),
                        linewidth = 1, color = "coral") +
@@ -558,7 +558,7 @@ plot.avltrajectory_single <- function(x, ...) {
     ggplot2::labs(x = "Epoch Time (s)",
                   y = "Distance (m)",
                   title = "Single AVL Trajectory",
-                  subtitle = paste("Trip ", unclass(object), sep = ""))
+                  subtitle = paste("Trip ", unclass(x), sep = ""))
   traj_plot
 }
 
