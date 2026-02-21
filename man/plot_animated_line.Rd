@@ -3,7 +3,7 @@
 \name{plot_animated_line}
 \alias{plot_animated_line}
 \alias{plot_animated_map}
-\title{Animate a vehicle trajectory or AVL data}
+\title{Animate vehicle trajectory or AVL data.}
 \usage{
 plot_animated_line(
   trajectory = NULL,
@@ -168,8 +168,8 @@ graph. Options include:
 \item{shape_geometry}{An SF object representing the route alignment. See
 \code{get_shape_geometry()}.}
 
-\item{background}{The OSM background (basemap) for the animation. See
-\code{rosm::osm.image()}. Default is \code{"cartolight"}.}
+\item{background}{Optional. The OSM background (basemap) for the animation.
+See \code{rosm::osm.image()}. Default is \code{"cartolight"}.}
 
 \item{background_zoom}{Optional. The zoom, relative to the "correct" level,
 for the background basemap. Default is 0.}
