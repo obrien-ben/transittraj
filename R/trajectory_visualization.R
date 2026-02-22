@@ -292,7 +292,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
       # Check that requested field is in feature DF
       if (!(label_field %in% names(feature_distances))) {
         rlang::abort(message = "feature_distances: label_field not found in field names.",
-                     class = "error_trajanim_formatting")
+                     class = "error_trajanim_labels")
       }
       # Label position setup
       if (label_pos == "left") {
@@ -305,7 +305,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
         x_lims <- c(0, 1)
       } else {
         rlang::abort(message = "Unknown label_pos. Please enter \"left\" or \"right\".",
-                     class = "error_trajanim_formatting")
+                     class = "error_trajanim_labels")
       }
     } else {
       x_lims <- c(-1, 1)
@@ -426,86 +426,57 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
                                  center_vehicles = center_vehicles)
   trips_df <- val_data[[1]]
   feature_distances <- val_data[[2]]
+  # Validate shape geometry
+  validate_shape_geometry(shape_geometry = shape_geometry,
+                          max_length = 1,
+                          require_shape_id = FALSE)
 
   # --- Formatting ---
   # Vehicle outline setup
-  if (is.character(veh_outline)) {
-    show_legend_vehcolor <- "none"
-    trips_df <- trips_df %>%
-      dplyr::mutate(temp_color = 1)
-    veh_outline_by <- "temp_color"
-    veh_outline_vals <- c(veh_outline)
-    names(veh_outline_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-  } else if ("outline" %in% names(veh_outline)) {
-    show_legend_vehcolor <- "legend"
-    veh_outline_names <- names(veh_outline)
-    veh_outline_by <- veh_outline_names[(veh_outline_names != "outline") & (veh_outline_names != "shape")]
-    veh_outline_vals <- as.character(veh_outline$outline)
-    names(veh_outline_vals) <- as.character(veh_outline[[veh_outline_by]])
-  } else {
-    stop("veh_outline dataframe: outline column not provided")
-  }
-
+  veh_outline_list <- plot_format_setup(plotting_df = trips_df,
+                                        attribute_input = veh_outline,
+                                        attribute_type = "outline",
+                                        attribute_name = "veh_outline")
+  trips_df <- veh_outline_list[[1]]
+  show_legend_vehcolor <- veh_outline_list[[2]]
+  veh_outline_by <- veh_outline_list[[3]]
+  veh_outline_vals <- veh_outline_list[[4]]
   # Vehicle shape setup
-  if (is.numeric(veh_shape)) {
-    show_legend_vehshape <- "none"
-    trips_df <- trips_df %>%
-      dplyr::mutate(temp_shape = 1)
-    veh_shape_by = "temp_shape"
-    veh_shape_vals <- c(veh_shape)
-    names(veh_shape_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-  } else if ("shape" %in% names(veh_shape)) {
-    show_legend_vehshape <- "legend"
-    veh_shape_names <- names(veh_shape)
-    veh_shape_by <- veh_shape_names[(veh_shape_names != "shape") & (veh_shape_names != "outline")]
-    veh_shape_vals <- veh_shape$shape
-    names(veh_shape_vals) <- as.character(veh_shape[[veh_shape_by]])
-  } else {
-    stop("veh_shape dataframe: shape column not provided")
-  }
-
+  veh_shape_list <- plot_format_setup(plotting_df = trips_df,
+                                      attribute_input = veh_shape,
+                                      attribute_type = "shape",
+                                      attribute_name = "veh_shape")
+  trips_df <- veh_shape_list[[1]]
+  show_legend_vehshape <- veh_shape_list[[2]]
+  veh_shape_by <- veh_shape_list[[3]]
+  veh_shape_vals <- veh_shape_list[[4]]
   if (!is.null(feature_distances)) {
     # Feature outline setup
-    if (is.character(feature_outline)) {
-      show_legend_featurecolor = "none"
-      feature_distances <- feature_distances %>%
-        dplyr::mutate(temp_outline = 1)
-      feature_outline_by = "temp_outline"
-      feature_outline_vals <- c(feature_outline)
-      names(feature_outline_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-    } else if ("outline" %in% names(feature_outline)) {
-      show_legend_featurecolor = "legend"
-      feature_outline_names <- names(feature_outline)
-      feature_outline_by <- feature_outline_names[(feature_outline_names != "outline") & (feature_outline_names != "shape")]
-      feature_outline_vals <- as.character(feature_outline$outline)
-      names(feature_outline_vals) <- as.character(feature_outline[[feature_outline_by]])
-    } else {
-      stop("outline column not provided")
-    }
-
+    feature_outline_list <- plot_format_setup(plotting_df = feature_distances,
+                                              attribute_input = feature_outline,
+                                              attribute_type = "outline",
+                                              attribute_name = "feature_outline")
+    feature_distances <- feature_outline_list[[1]]
+    show_legend_featurecolor <- feature_outline_list[[2]]
+    feature_outline_by <- feature_outline_list[[3]]
+    feature_outline_vals <- feature_outline_list[[4]]
     # Feature shape setup
-    if (is.numeric(feature_shape)) {
-      show_legend_featureshape = "none"
-      feature_distances <- feature_distances %>%
-        dplyr::mutate(temp_shape = 1)
-      feature_shape_by = "temp_shape"
-      feature_shape_vals <- c(feature_shape)
-      names(feature_shape_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-    } else if ("shape" %in% names(feature_shape)) {
-      show_legend_featureshape = "legend"
-      feature_shape_names <- names(feature_shape)
-      feature_shape_by <- feature_shape_names[(feature_shape_names != "shape") & (feature_shape_names != "outline")]
-      feature_shape_vals <- feature_shape$shape
-      names(feature_shape_vals) <- as.character(feature_shape[[feature_shape_by]])
-    } else {
-      stop("shape column not provided")
-    }
+    feature_shape_list <- plot_format_setup(plotting_df = feature_distances,
+                                            attribute_input = feature_shape,
+                                            attribute_type = "shape",
+                                            attribute_name = "feature_shape")
+    feature_distances <- feature_shape_list[[1]]
+    show_legend_featureshape <- feature_shape_list[[2]]
+    feature_shape_by <- feature_shape_list[[3]]
+    feature_shape_vals <- feature_shape_list[[4]]
   }
 
   # --- Spatial ---
+  # Get geometry SFC
+  shape_geom_sfc <- sf::st_geometry(shape_geometry)
   # Get coordinates for trips_df, but leave as dataframe
   trips_sf <- trips_df %>%
-    dplyr::mutate(point_geom = sf::st_line_interpolate(line = shape_geometry,
+    dplyr::mutate(point_geom = sf::st_line_interpolate(line = shape_geom_sfc,
                                                        dist = distance,
                                                        normalized = FALSE),
                   x_spatial = sf::st_coordinates(point_geom)[,1],
@@ -514,7 +485,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
   # Convert features into SF points
   if (!is.null(feature_distances)) {
     features_sf <- feature_distances %>%
-      dplyr::mutate(point_geom = sf::st_line_interpolate(line = shape_geometry,
+      dplyr::mutate(point_geom = sf::st_line_interpolate(line = shape_geom_sfc,
                                                          dist = distance,
                                                          normalized = FALSE),
                     x_spatial = sf::st_coordinates(point_geom)[,1],
@@ -538,7 +509,8 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
   if (!is.null(label_field)) {
     # Check that requested field is in feature DF
     if (!(label_field %in% names(feature_distances))) {
-      stop("feature_distances: label_field not found in field names")
+      rlang::abort(message = "feature_distances: label_field not found in field names.",
+                   class = "error_trajanim_formatting")
     }
 
     # Label position setup
@@ -593,7 +565,8 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
       label_hjust = "outward"
       label_vjust = "outward"
     } else {
-      stop("Unknown label position. Please enter \"N\", \"S\", \"E\", \"W\", \"NE\", \"NW\", \"SE\", \"SW\", \"in\", or \"out\".")
+      rlang::abort(message = "Unknown label position. Please enter \"N\", \"S\", \"E\", \"W\", \"NE\", \"NW\", \"SE\", \"SW\", \"in\", or \"out\".",
+                   class = "error_trajanim_labels")
     }
   }
 
@@ -604,19 +577,19 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
     ggspatial::annotation_map_tile(type = background, zoomin = background_zoom,
                                    progress = "none") +
     # Plot route
-    ggspatial::geom_sf(data = shape_geometry, color = route_color, size = route_width) +
+    ggspatial::geom_sf(data = shape_geom_sfc, color = route_color, size = route_width) +
     # Set bounding box
     ggspatial::coord_sf(xlim = c((bbox[1] - bbox_expand), (bbox[3] + bbox_expand)),
                         ylim = c((bbox[2] - bbox_expand), (bbox[4] + bbox_expand)),
-                        crs = sf::st_crs(shape_geometry))
+                        crs = sf::st_crs(shape_geom_sfc))
 
   # Add features
   if (!is.null(feature_distances)) {
     anim_map <- anim_map +
       ggplot2::geom_point(data = features_sf,
                           ggspatial::aes(x = x_spatial, y = y_spatial,
-                                         color = factor(!!ensym(feature_outline_by)),
-                                         shape = factor(!!ensym(feature_shape_by))),
+                                         color = factor(!!sym(feature_outline_by)),
+                                         shape = factor(!!sym(feature_shape_by))),
                           fill = feature_fill, alpha = feature_alpha,
                           stroke = feature_stroke, size = feature_size) +
       ggplot2::scale_color_manual(name = feature_outline_by,
@@ -632,7 +605,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
         ggplot2::geom_label(data = features_sf,
                             aes(x = x_spatial, y = y_spatial,
                                 label = !!ensym(label_field),
-                                color = factor(!!ensym(feature_outline_by))),
+                                color = factor(!!sym(feature_outline_by))),
                             hjust = label_hjust, vjust = label_vjust,
                             nudge_x = label_nudge_x, nudge_y = label_nudge_y,
                             alpha = label_alpha, size = label_size,
@@ -647,8 +620,8 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
     ggplot2::geom_point(data = trips_sf,
                         ggplot2::aes(x = x_spatial, y = y_spatial,
                                      group = trip_id_performed,
-                                     color = factor(!!ensym(veh_outline_by)),
-                                     shape = factor(!!ensym(veh_shape_by))),
+                                     color = factor(!!sym(veh_outline_by)),
+                                     shape = factor(!!sym(veh_shape_by))),
                         fill = veh_fill, size = veh_size, stroke = veh_stroke) +
     ggplot2::scale_color_manual(name = veh_outline_by,
                                 values = veh_outline_vals,
