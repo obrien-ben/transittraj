@@ -15,22 +15,30 @@ export_animation(
 )
 }
 \arguments{
-\item{anim_object}{A gganimate object.}
+\item{anim_object}{A \code{gganimate} object.}
 
-\item{path}{A string representing the desired path and name for the animation.}
+\item{path}{A string representing the desired path and name at which to save
+animation.}
 
-\item{duration}{Optional. A numeric, in seconds, representing the length of the animation. Default is 30.}
+\item{duration}{Optional. A numeric, in seconds, representing the length of
+the animation. Default is 30.}
 
-\item{fps}{Optional. The frames per second of the saved animation. Must be a factor of 100. Default is 10.}
+\item{fps}{Optional. The frames per second of the saved animation. Default
+is 10.}
 
-\item{width}{Optional. The width of the exported image, in inches. Default is 7.5}
+\item{width}{Optional. The width of the exported image, in inches. Default
+is 7.5}
 
-\item{height}{Optional. The height of the exported image, in inches. Default is 5.5.}
+\item{height}{Optional. The height of the exported image, in inches. Default
+is 5.5.}
 
-\item{dpi}{Optional. The resolution, in dots per inch, of the image. Default is 100.}
+\item{dpi}{Optional. The resolution, in dots per inch, of the image. Default
+is 100.}
 }
 \description{
-This function is a wrapper on gganimate's animate() and anim_save(), providing a simplified, though less feature-rich, version of these functions.
-Animations are saved as .gif's at the desired path.
-With this function, publication-quality (high-resolution and smooth) animations are possible, but take a long time to render.
+This function is a helepr for \code{gganimate}'s \code{anim_save()}, providing a
+simplified, though less feature-rich, version of these functions. Animations
+are saved as \code{.gif}s at the desired path. With this function,
+publication-quality (high-resolution and smooth) animations are possible,
+but take a long time to render.
 }

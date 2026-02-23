@@ -32,8 +32,8 @@ or grouped trajectory. If provided, \code{distance_df} must not be provided.
 Default is \code{NULL}.}
 
 \item{distance_df}{Optional. A dataframe of time and distance points. Must
-include at least \code{event_timestamp} and \code{distance}. If provided,
-\code{trajectory} must not be provided. Default is \code{NULL}.}
+include at least \code{event_timestamp}, \code{distance}, and \code{trip_id_performed}.
+If provided, \code{trajectory} must not be provided. Default is \code{NULL}.}
 
 \item{plot_trips}{Optional. A vector of \code{trip_id_performed}s to plot. Default
 is \code{NULL}, which will plot all trips provided in the \code{trajectory} or

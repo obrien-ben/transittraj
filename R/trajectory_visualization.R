@@ -1099,7 +1099,7 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
 #' Two formatting options are available through this function: basemaps
 #' and route color palettes.
 #'
-#' The`background` parameter allows you to customize the background map below
+#' The `background` parameter allows you to customize the background map below
 #' the plotted shapes and stops. Esri's light grey canvas is the default, as it
 #' is excellent for providing geographic context while still allowing the
 #' routes to stand out. To see the available options, type
@@ -1115,7 +1115,7 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
 #'
 #' - Using a named color palette. Without `gtfs` colors, this function
 #' assigns colors categorically (using `leaflet::colorFactor()`). To set
-#' the palette, input a strinct corresponding to a palette name from
+#' the palette, input a string corresponding to a palette name from
 #' `RColorBrewer`, a palette name from `viridis`, a vector of color names (with
 #' the same length as the number of shapes), or some other color function. See
 #' Leaflet's

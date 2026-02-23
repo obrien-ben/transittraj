@@ -13,14 +13,65 @@ plot_interactive_gtfs(
 \arguments{
 \item{gtfs}{A tidytransit GTFS object.}
 
-\item{background}{Optional. A string for the background of the transit map, from Leaflet's provider library. Default is Esri's light gray canvas (Esri.WorldGrayCanvas).}
+\item{background}{Optional. A string for the background of the transit map,
+from Leaflet's provider library (see \verb{leaflet::providers$}). Default is
+Esri's light gray canvas (\code{"Esri.WorldGrayCanvas"}).}
 
-\item{color_palette}{Optional. A string for the Leaflet color palette to color routes. If "gtfs", will use color codes in the GTFS routes.txt. Default is "Dark2".}
+\item{color_palette}{Optional. A string for the Leaflet color palette to
+color routes. If \code{"gtfs"}, will use color codes in the GTFS \code{routes} file.
+Default is \code{"Dark2"}.}
 }
 \value{
-A Leaftlet map object.
+A Leaftlet object.
 }
 \description{
-This function generates a Leaflet-based interactive map viewer using a GTFS object
-from tidytransit.
+This function generates a simple Leaflet-based interactive map viewer of a
+GTFS. This function is intended for quick and easy visualization of a GTFS
+feed. As such, formatting options are relatively limited.
+}
+\details{
+\subsection{Route Shapes and Stops}{
+
+The primary goal of this function is to visualize and explore each GTFS
+shape, including its associated \code{route_id} and \code{direction_id}. This function
+will plot all shapes and stops present in the input \code{gtfs}. To plot only
+a specific route or direction, first the feed using \code{filter_by_route()}.
+
+Routes have both pop-ups and hover labels. The hover label shows the
+shapes's \code{route_id} (from the \code{trips} file). The pop-up will show the
+\code{route_id}, \code{direction_id}, and \code{shape_id}.
+
+Stops also have both pop-ups and hover labels. The hover label will show the
+point's \code{stop_id} (from the \code{stops} file). The pop-up will show the
+\code{stop_name} and \code{stop_id}.
+}
+
+\subsection{Formatting}{
+
+Two formatting options are available through this function: basemaps
+and route color palettes.
+
+The \code{background} parameter allows you to customize the background map below
+the plotted shapes and stops. Esri's light grey canvas is the default, as it
+is excellent for providing geographic context while still allowing the
+routes to stand out. To see the available options, type
+\verb{leaflet::providers$} into your console.
+
+The route colors can be customized in two different ways:
+\itemize{
+\item Using the \code{gtfs}'s colors. Typically, the \code{routes} file in a GTFS feed
+will contain a field \code{route_color}; this is the color you see in most
+public-facing mapping/navigation applications (e.g., Google Maps, Transit,
+etc.). If this is present in the input \code{gtfs} feed, setting
+\code{color_palette = "gtfs"} will use this field to color each shape.
+\item Using a named color palette. Without \code{gtfs} colors, this function
+assigns colors categorically (using \code{leaflet::colorFactor()}). To set
+the palette, input a string corresponding to a palette name from
+\code{RColorBrewer}, a palette name from \code{viridis}, a vector of color names (with
+the same length as the number of shapes), or some other color function. See
+Leaflet's
+\href{https://rstudio.github.io/leaflet/articles/colors.html}{colors vignette}
+for more information.
+}
+}
 }
