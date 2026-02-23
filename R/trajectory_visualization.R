@@ -221,7 +221,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
 
   # --- Validation & Setup ---
   # Validate input data & set up feature & vehicle location DFs to plot
-  val_data <- plot_anim_df_setup(trajectory = trajectory,
+  val_data <- plot_df_setup(trajectory = trajectory,
                                  distance_df = distance_df,
                                  timestep = timestep,
                                  plot_trips = plot_trips,
@@ -417,7 +417,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
 
   # --- Validation & Setup ---
   # Validate input data & set up feature & vehicle location DFs to plot
-  val_data <- plot_anim_df_setup(trajectory = trajectory,
+  val_data <- plot_df_setup(trajectory = trajectory,
                                  distance_df = distance_df,
                                  timestep = timestep,
                                  plot_trips = plot_trips,
@@ -666,7 +666,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
 #' @param feature_distances Linear distance to features.
 #' @param center_vehicles Should vehicles be centered
 #' @return plotting dataframe (trips_df)
-plot_anim_df_setup <- function(trajectory, distance_df,
+plot_df_setup <- function(trajectory, distance_df,
                                plot_trips,
                                timestep,
                                distance_lim,
@@ -676,7 +676,8 @@ plot_anim_df_setup <- function(trajectory, distance_df,
   # --- Vehicle DF setup ---
   # Check provided trajectories & distance DF, and filter as needed
   if (!is.null(trajectory) & !is.null(distance_df)) {
-    stop("Please provide only one of trajectory and distance_df")
+    rlang::abort(message = "Please provide only one of trajectory and distance_df.",
+                 class = "error_plottraj_inputdata")
   } else if (!is.null(trajectory)) {
     # If trajectory is provided, generate the DF by predicting from functions
 
@@ -698,7 +699,8 @@ plot_anim_df_setup <- function(trajectory, distance_df,
                           new_times = time_seq) %>%
         dplyr::rename(distance = interp)
     } else {
-      stop("Unrecognized trajectory object. Please use get_trajectory_function() to generate a trajectory object.")
+      rlang::abort(message = "Unrecognized trajectory object. Please use get_trajectory_function() to generate a trajectory object.",
+                   class = "error_plottraj_inputdata")
     }
   } else {
     # If distance_df provided, validate it
@@ -734,7 +736,7 @@ plot_anim_df_setup <- function(trajectory, distance_df,
     # Check that observations remain after filtering.
     if (dim(trips_df)[1] == 0) {
       rlang::abort(message = "No trip observations within distance limit.",
-                   class = "error_trajanim_distlim")
+                   class = "error_plottraj_distlim")
     }
 
     # If features, filter these to be within distance range
@@ -745,7 +747,7 @@ plot_anim_df_setup <- function(trajectory, distance_df,
       # Check that feature values remain after filtering.
       if (dim(feature_distances)[1] == 0) {
         rlang::abort(message = "No features within distance limit.",
-                     class = "error_trajanim_distlim")
+                     class = "error_plottraj_distlim")
       }
     }
   }
@@ -771,6 +773,8 @@ plot_anim_df_setup <- function(trajectory, distance_df,
 #' @param attribute_type The type of attribute being constructed (e.g.,
 #' "outline")
 #' @param attribute_name The name of the attribute (e.g., "veh_outline")
+#' @return List with: 1) new plotting_df, 2) show_legend, 3) attribute_by,
+#' and 4) attribute_vals
 plot_format_setup <- function(plotting_df,
                               attribute_input,
                               attribute_type,
@@ -862,159 +866,76 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
                             label_alpha = 0.6, label_pos = "left") {
 
   # --- Plotting DF setup ---
-  # Check provided trajectories & distance DF, and filter as needed
-  if (!is.null(trajectory) & !is.null(distance_df)) {
-    stop("Please provide only one of trajectory and distance_df")
-  } else if (!is.null(trajectory)) {
-    # If trajectory is provided, generate the DF by predicting from functions
-
-    # Get times to interpolate over
-    from_time <- min(attr(trajectory, "min_time"))
-    to_time <- max(attr(trajectory, "max_time"))
-    time_seq <- seq(from = from_time, to = to_time,
-                    by = timestep)
-
-    # Depending on object type, get distances at times
-    if ("avltrajectory_single" %in% class(trajectory)) {
-      # If single trajectory, should not filter by trips
-      trips_df <- predict(trajectory, new_times = time_seq) %>%
-        dplyr::rename(distance = interp) %>%
-        dplyr::mutate(trip_id_performed = unclass(trajectory))
-    } else if ("avltrajectory_group" %in% class(trajectory)) {
-      # If grouped trajectory, handle trips
-      trips_df <- predict(trajectory, trips = plot_trips,
-                          new_times = time_seq) %>%
-        dplyr::rename(distance = interp)
-    } else {
-      stop("Unrecognized trajectory object. Please use get_trajectory_function() to generate a trajectory object.")
-    }
-  } else {
-    # If distance_df is provided, filter to desired trips
-    # Get trips if not provided
-    if (is.null(plot_trips)) {
-      plot_trips <- unique(distance_df$trip_id_performed)
-    }
-
-    # Filter
-    trips_df <- distance_df %>%
-      dplyr::filter(trip_id_performed %in% plot_trips)
-  }
-
-  # Filter observations to distance limits
-  if (!is.null(distance_lim)) {
-    trips_df <- trips_df %>%
-      dplyr::filter((distance >= distance_lim[1]) & (distance <= distance_lim[2]))
-
-    # If features, filter these to be within distance range
-    if (!is.null(feature_distances)) {
-      feature_distances <- feature_distances %>%
-        dplyr::filter((distance >= distance_lim[1]) & (distance <= distance_lim[2]))
-    }
-  }
-
-  # Center trajectories to all begin at same point
-  if (center_trajectories) {
-    trips_df <- trips_df %>%
-      dplyr::mutate(event_timestamp = as.numeric(event_timestamp)) %>%
-      dplyr::group_by(trip_id_performed) %>%
-      dplyr::mutate(event_timestamp = event_timestamp - min(event_timestamp)) %>%
-      dplyr::ungroup()
-  }
-
+  val_data <- plot_df_setup(trajectory = trajectory,
+                            distance_df = distance_df,
+                            timestep = timestep,
+                            plot_trips = plot_trips,
+                            feature_distances = feature_distances,
+                            distance_lim = distance_lim,
+                            center_vehicles = center_vehicles)
+  trips_df <- val_data[[1]]
+  feature_distances <- val_data[[2]]
 
   # --- Formatting setup ---
-  # Traj line color setup
-  if (is.character(traj_color)) {
-    show_legend_trajcolor <- "none"
-    trips_df <- trips_df %>%
-      dplyr::mutate(temp_color = 1)
-    color_by = "temp_color"
-    color_vals <- c(traj_color)
-    names(color_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-  } else if ("color" %in% names(traj_color)) {
-    show_legend_trajcolor <- "legend"
-    color_names <- names(traj_color)
-    color_by <- color_names[(color_names != "color") & (color_names != "linetype")]
-    color_vals <- as.character(traj_color$color)
-    names(color_vals) <- as.character(traj_color[[color_by]])
-  } else {
-    stop("traj_color dataframe: color column not provided")
-  }
-
-  # Traj linetype setup
-  if (is.character(traj_type)) {
-    show_legend_trajtype <- "none"
-    trips_df <- trips_df %>%
-      mutate(temp_line = 1)
-    traj_type_by = "temp_line"
-    traj_type_vals <- c(traj_type)
-    names(traj_type_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-  } else if ("linetype" %in% names(traj_type)) {
-    show_legend_trajtype <- "legend"
-    traj_type_names <- names(traj_type)
-    traj_type_by <- traj_type_names[(traj_type_names != "linetype") & (traj_type_names != "color")]
-    traj_type_vals <- traj_type$linetype
-    names(traj_type_vals) <- as.character(traj_type[[traj_type_by]])
-  } else {
-    stop("traj_type dataframe: linetype column not provided")
-  }
-
-  # Feature setup
+  # Trajectory color
+  traj_color_list <- plot_format_setup(plotting_df = trips_df,
+                                       attribute_input = traj_color,
+                                       attribute_type = "color",
+                                       attribute_name = "traj_color")
+  trips_df <- traj_color_list[[1]]
+  show_legend_trajcolor <- traj_color_list[[2]]
+  color_by <- traj_color_list[[3]]
+  color_vals <- traj_color_list[[4]]
+  # Trajectory linetype
+  traj_type_list <- plot_format_setup(plotting_df = trips_df,
+                                       attribute_input = traj_type,
+                                       attribute_type = "linetype",
+                                       attribute_name = "traj_type")
+  trips_df <- traj_type_list[[1]]
+  show_legend_trajtype <- traj_type_list[[2]]
+  traj_type_by <- traj_type_list[[3]]
+  traj_type_vals <- traj_type_list[[4]]
+  # Features
   if (!is.null(feature_distances)) {
-    # Feature color setup
-    if (is.character(feature_color)) {
-      show_legend_featurecolor <- "none"
-      feature_distances <- feature_distances %>%
-        dplyr::mutate(temp_color = 1)
-      feature_color_by = "temp_color"
-      feature_color_vals <- c(feature_color)
-      names(feature_color_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-    } else if ("color" %in% names(feature_color)) {
-      show_legend_featurecolor <- "legend"
-      feature_color_names <- names(feature_color)
-      feature_color_by <- feature_color_names[(feature_color_names != "color") & (feature_color_names != "linetype")]
-      feature_color_vals <- as.character(feature_color$color)
-      names(feature_color_vals) <- as.character(feature_color[[feature_color_by]])
-    } else {
-      stop("feature_color dataframe: color column not provided")
-    }
-
-    # Feature linetype setup
-    if (is.character(feature_type)) {
-      show_legend_featuretype <- "none"
-      feature_distances <- feature_distances %>%
-        mutate(temp_line = 1)
-      feature_type_by = "temp_line"
-      feature_type_vals <- c(feature_type)
-      names(feature_type_vals) <- "1" # Temp = 1 is a dummy grouping factor to code all trips_df the same color
-    } else if ("linetype" %in% names(feature_type)) {
-      show_legend_featuretype <- "legend"
-      feature_type_names <- names(feature_type)
-      feature_type_by <- feature_type_names[(feature_color_names != "color") & (feature_color_names != "linetype")]
-      feature_type_vals <- feature_type$linetype
-      names(feature_type_vals) <- as.character(feature_type[[feature_type_by]])
-    } else {
-      stop("feature_type dataframe: linetype column not provided")
-    }
+    # Feature outline setup
+    feature_color_list <- plot_format_setup(plotting_df = feature_distances,
+                                              attribute_input = feature_color,
+                                              attribute_type = "color",
+                                              attribute_name = "feature_color")
+    feature_distances <- feature_color_list[[1]]
+    show_legend_featurecolor <- feature_color_list[[2]]
+    feature_color_by <- feature_color_list[[3]]
+    feature_color_vals <- feature_color_list[[4]]
+    # Feature shape setup
+    feature_type_list <- plot_format_setup(plotting_df = feature_distances,
+                                            attribute_input = feature_type,
+                                            attribute_type = "linetype",
+                                            attribute_name = "feature_type")
+    feature_distances <- feature_type_list[[1]]
+    show_legend_featuretype <- feature_type_list[[2]]
+    feature_type_by <- feature_type_list[[3]]
+    feature_type_vals <- feature_type_list[[4]]
 
     # Label setup
     if (!is.null(label_field)) {
       # Check that requested field is in feature DF
       if (!(label_field %in% names(feature_distances))) {
-        stop("feature_distances: label_field not found in field names")
+        rlang::abort(message = "feature_distances: label_field not found in field names.",
+                     class = "error_plottraj_labels")
       }
-
       # Label position setup
       if (label_pos == "left") {
         label_t = min(trips_df$event_timestamp)
       } else if (label_pos == "right") {
         label_t = max(trips_df$event_timestamp)
       } else {
-        stop("Unknown label position. Please enter \"left\" or \"right\".")
+        rlang::abort(message = "Unknown label_pos. Please enter \"left\" or \"right\".",
+                     class = "error_trajanim_labels")
       }
     }
   }
 
+  # --- Plotting ---
   # Create trajectory line and stop points
   traj_plot <- ggplot() +
     # Add lines
@@ -1037,7 +958,7 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
       ggnewscale::new_scale("color") +
       ggnewscale::new_scale("linetype") +
       ggplot2::geom_hline(data = feature_distances,
-                          aes(yintercept = distance,
+                          ggplot2::aes(yintercept = distance,
                               color = factor(!!ensym(feature_color_by)),
                               linetype = factor(!!ensym(feature_type_by))),
                           linewidth = feature_width, alpha = feature_alpha) +
@@ -1052,7 +973,7 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
     if (!is.null(label_field)) {
       traj_plot <- traj_plot +
         ggplot2::geom_label(data = feature_distances,
-                            aes(x = label_t, y = distance,
+                            ggplot2::aes(x = label_t, y = distance,
                                 label = !!ensym(label_field),
                                 color = factor(!!ensym(feature_color_by))),
                             hjust = label_pos, alpha = label_alpha,

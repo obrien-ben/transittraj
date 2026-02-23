@@ -17,6 +17,10 @@ outline_input = veh_outline)}
 
 \item{attribute_name}{The name of the attribute (e.g., "veh_outline")}
 }
+\value{
+List with: 1) new plotting_df, 2) show_legend, 3) attribute_by,
+and 4) attribute_vals
+}
 \description{
 Intended for internal use only.
 }
