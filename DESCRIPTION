@@ -37,3 +37,6 @@ Imports:
     tidyr,
     tidytransit,
     viridis
+Depends: 
+    R (>= 3.5)
+LazyData: true
