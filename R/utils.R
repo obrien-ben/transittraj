@@ -26,7 +26,11 @@ utils::globalVariables(c(
   "stop_sequence", "trip_id", "shape_pt_lat", "shape_pt_lon",
   # TIDES
   "trip_id_performed", "event_timestamp", "vehicle_id", "location_ping_id",
-  "operator_id", "speed", "latitude", "longitude"
+  "operator_id", "speed", "latitude", "longitude",
+  # Internal to transittraj functions
+  "delta_dist", "delta_time", "max_dist", "min_dist", "max_time", "min_time",
+  "trip_distance", "trip_distance", "duration", "max_dist_gap", "max_t_gap",
+  "dist_ok", "dist_gap_ok", "t_gap_ok"
   ))
 
 #' Calculates numerical inverse of a trajectory function

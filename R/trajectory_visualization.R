@@ -690,12 +690,12 @@ plot_df_setup <- function(trajectory, distance_df,
     # Depending on object type, get distances at times
     if ("avltrajectory_single" %in% class(trajectory)) {
       # If single trajectory, should not filter by trips
-      trips_df <- predict(trajectory, new_times = time_seq) %>%
+      trips_df <- predict.avltrajectory_single(trajectory, new_times = time_seq) %>%
         dplyr::rename(distance = interp) %>%
         dplyr::mutate(trip_id_performed = unclass(trajectory))
     } else if ("avltrajectory_group" %in% class(trajectory)) {
       # If grouped trajectory, handle trips
-      trips_df <- predict(trajectory, trips = plot_trips,
+      trips_df <- predict.avltrajectory_group(trajectory, trips = plot_trips,
                           new_times = time_seq) %>%
         dplyr::rename(distance = interp)
     } else {
@@ -767,6 +767,7 @@ plot_df_setup <- function(trajectory, distance_df,
 #'
 #' Intended for internal use only.
 #'
+#' @importFrom rlang :=
 #' @param plotting_df DF for plotting, either trips or features
 #' @param attribute_input The user input value for the attribute (e.g.,
 #' outline_input = veh_outline)

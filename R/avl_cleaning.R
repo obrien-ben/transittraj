@@ -323,10 +323,10 @@ clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
     dplyr::arrange(trip_id_performed, event_timestamp) %>%
     dplyr::group_by(trip_id_performed) %>%
     dplyr::mutate(window_med = slider::slide_dbl(distance,
-                                                 median,
+                                                 stats::median,
                                                  .before = num_obs, .after = num_obs),
                   window_mad = slider::slide_dbl(distance,
-                                                 mad,
+                                                 stats::mad,
                                                  .before = num_obs, .after = num_obs),
                   med_dist = distance - window_med,
                   # Implosions will only be marked if evaluate_implosions is set to true; otherwise, they will be FALSE and treated as normal points
