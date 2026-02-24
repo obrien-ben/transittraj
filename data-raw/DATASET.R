@@ -45,3 +45,7 @@ wmata_avl <- wmata_gtfs_rt %>%
 
 # Verify TIDES compliance
 wmata_tides <- validate_tides(avl_df = wmata_avl)
+
+# Save to package
+usethis::use_data(wmata_avl)
+usethis::use_data(wmata_gtfs)
