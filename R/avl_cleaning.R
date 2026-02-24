@@ -507,7 +507,8 @@ trim_trips <- function(distance_df, trim_type = "both",
         dplyr::filter(!obs_ok) %>%
         dplyr::select(trip_id_performed, event_timestamp, distance,
                       min_dist_index, max_dist_index, row_index,
-                      before_min, after_max, obs_ok)
+                      before_min, after_max, obs_ok,
+                      location_ping_id)
       return(removals_df)
     } else { # Otherwise, filter to all OK
       trim_df <- index_df %>%
@@ -522,7 +523,7 @@ trim_trips <- function(distance_df, trim_type = "both",
         dplyr::filter(before_min) %>%
         dplyr::select(trip_id_performed, event_timestamp, distance,
                       min_dist_index, max_dist_index, row_index,
-                      before_min)
+                      before_min, location_ping_id)
       return(removals_df)
     } else { # Otherise, filter to obs on/after min index
       trim_df <- index_df %>%
@@ -537,7 +538,7 @@ trim_trips <- function(distance_df, trim_type = "both",
         dplyr::filter(after_max) %>%
         dplyr::select(trip_id_performed, event_timestamp, distance,
                       min_dist_index, max_dist_index, row_index,
-                      after_max)
+                      after_max, location_ping_id)
       return(removals_df)
     } else { # Otherwise, filter to obs on/before max index
       trim_df <- index_df %>%
@@ -718,7 +719,7 @@ make_monotonic <- function(distance_df,
                       (dplyr::lead(time_sec) - time_sec),
                     corrected_implied_speed = (dplyr::lead(distance) - dplyr::lag(distance)) /
                       (dplyr::lead(time_sec) - dplyr::lag(time_sec)),
-                    corrected_implied_speed = replace_na(corrected_implied_speed, 0),
+                    corrected_implied_speed = tidyr::replace_na(corrected_implied_speed, 0),
                     speed = dplyr::if_else(condition = correction_applied,
                                            true = pmax(speed, corrected_implied_speed),
                                            false = speed)) %>%
@@ -742,6 +743,7 @@ make_monotonic <- function(distance_df,
       # Call internal stats C function to adjust speeds to meet FC constraints
       monotonic_speeds <- correct_speeds_fun(m_0 = trip_m_0,
                                              deltas = trip_delta)
+      #monotonic_speeds <- .Call(stats:::C_monoFC_m, trip_m_0, trip_delta)
 
       # Replace speeds with corrected monotonic speeds, remove unneeded columns
       trip_df <- trip_df %>%
