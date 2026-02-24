@@ -323,8 +323,8 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
     bus_plot <- bus_plot +
       ggplot2::geom_point(data = feature_distances,
                           ggplot2::aes(y = distance, x = x,
-                                       color = factor(!!sym(feature_outline_by)),
-                                       shape = factor(!!sym(feature_shape_by))),
+                                       color = factor(!!rlang::sym(feature_outline_by)),
+                                       shape = factor(!!rlang::sym(feature_shape_by))),
                           size = feature_size, stroke = feature_stroke,
                           fill = feature_fill, alpha = feature_alpha) +
       ggplot2::scale_color_manual(name = feature_outline_by,
@@ -339,8 +339,8 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
       bus_plot <- bus_plot +
         ggplot2::geom_label(data = feature_distances,
                             ggplot2::aes(x = 0, y = distance,
-                                         label = !!sym(label_field),
-                                         color = factor(!!sym(feature_outline_by))),
+                                         label = !!rlang::sym(label_field),
+                                         color = factor(!!rlang::sym(feature_outline_by))),
                             hjust = label_just,
                             nudge_x = label_nudge,
                             alpha = label_alpha, size = label_size,
@@ -354,8 +354,8 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
     ggnewscale::new_scale("shape") +
     ggplot2::geom_point(data = trips_df,
                         ggplot2::aes(y = distance, x = x, group = trip_id_performed,
-                                     color = factor(!!sym(veh_outline_by)),
-                                     shape = factor(!!sym(veh_shape_by))),
+                                     color = factor(!!rlang::sym(veh_outline_by)),
+                                     shape = factor(!!rlang::sym(veh_shape_by))),
                         size = veh_size, stroke = veh_stroke,
                         fill = veh_fill, alpha = veh_alpha) +
     ggplot2::scale_color_manual(name = veh_outline_by,
@@ -588,8 +588,8 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
     anim_map <- anim_map +
       ggplot2::geom_point(data = features_sf,
                           ggspatial::aes(x = x_spatial, y = y_spatial,
-                                         color = factor(!!sym(feature_outline_by)),
-                                         shape = factor(!!sym(feature_shape_by))),
+                                         color = factor(!!rlang::sym(feature_outline_by)),
+                                         shape = factor(!!rlang::sym(feature_shape_by))),
                           fill = feature_fill, alpha = feature_alpha,
                           stroke = feature_stroke, size = feature_size) +
       ggplot2::scale_color_manual(name = feature_outline_by,
@@ -603,9 +603,9 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
     if (!is.null(label_field)) {
       anim_map <- anim_map +
         ggplot2::geom_label(data = features_sf,
-                            aes(x = x_spatial, y = y_spatial,
-                                label = !!ensym(label_field),
-                                color = factor(!!sym(feature_outline_by))),
+                            ggplot2::aes(x = x_spatial, y = y_spatial,
+                                label = !!rlang::sym(label_field),
+                                color = factor(!!rlang::sym(feature_outline_by))),
                             hjust = label_hjust, vjust = label_vjust,
                             nudge_x = label_nudge_x, nudge_y = label_nudge_y,
                             alpha = label_alpha, size = label_size,
@@ -620,8 +620,8 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
     ggplot2::geom_point(data = trips_sf,
                         ggplot2::aes(x = x_spatial, y = y_spatial,
                                      group = trip_id_performed,
-                                     color = factor(!!sym(veh_outline_by)),
-                                     shape = factor(!!sym(veh_shape_by))),
+                                     color = factor(!!rlang::sym(veh_outline_by)),
+                                     shape = factor(!!rlang::sym(veh_shape_by))),
                         fill = veh_fill, size = veh_size, stroke = veh_stroke) +
     ggplot2::scale_color_manual(name = veh_outline_by,
                                 values = veh_outline_vals,
@@ -1017,13 +1017,13 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
 
   # --- Plotting ---
   # Create trajectory line and stop points
-  traj_plot <- ggplot() +
+  traj_plot <- ggplot2::ggplot() +
     # Add lines
     ggplot2::geom_line(data = trips_df,
                        ggplot2::aes(y = distance, x = event_timestamp,
                                     group = trip_id_performed,
-                                    color = factor(!!ensym(color_by)),
-                                    linetype = factor(!!ensym(traj_type_by))),
+                                    color = factor(!!rlang::sym(color_by)),
+                                    linetype = factor(!!rlang::sym(traj_type_by))),
                        linewidth = traj_width, alpha = traj_alpha) +
     ggplot2::scale_color_manual(name = color_by,
                                 values = color_vals,
@@ -1039,8 +1039,8 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
       ggnewscale::new_scale("linetype") +
       ggplot2::geom_hline(data = feature_distances,
                           ggplot2::aes(yintercept = distance,
-                              color = factor(!!ensym(feature_color_by)),
-                              linetype = factor(!!ensym(feature_type_by))),
+                              color = factor(!!rlang::sym(feature_color_by)),
+                              linetype = factor(!!rlang::sym(feature_type_by))),
                           linewidth = feature_width, alpha = feature_alpha) +
       ggplot2::scale_color_manual(name = feature_color_by,
                                   values = feature_color_vals,
@@ -1054,8 +1054,8 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
       traj_plot <- traj_plot +
         ggplot2::geom_label(data = feature_distances,
                             ggplot2::aes(x = label_t, y = distance,
-                                label = !!ensym(label_field),
-                                color = factor(!!ensym(feature_color_by))),
+                                label = !!rlang::sym(label_field),
+                                color = factor(!!rlang::sym(feature_color_by))),
                             hjust = label_pos, alpha = label_alpha,
                             size = label_size, show.legend = FALSE)
     }

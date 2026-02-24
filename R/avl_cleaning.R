@@ -71,7 +71,7 @@ get_linear_distances <- function(avl_df, shape_geometry, clip_buffer = NULL,
   # Clean AVL distances & merge to DF
   units(avl_dist) <- NULL
   dist_df <- dist_df %>%
-    mutate(distance = avl_dist)
+    dplyr::mutate(distance = avl_dist)
 
   return(dist_df)
 }
@@ -332,7 +332,8 @@ clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
                   # Implosions will only be marked if evaluate_implosions is set to true; otherwise, they will be FALSE and treated as normal points
                   is_implosion = (window_mad == 0) & (!evaluate_implosions),
                   # Tails will only be marked if evaluate_tails is set to true; otherwise, they will be FALSE and treated as normal points
-                  is_tail = ((dplyr::row_number() <= num_obs) | (dplyr::row_number() >= n() - num_obs)) &
+                  is_tail = ((dplyr::row_number() <= num_obs) |
+                               (dplyr::row_number() >= dplyr::n() - num_obs)) &
                     (!evaluate_tails),
                   ignore_observation = is_implosion | is_tail,
                   mad_ok = abs(med_dist) < (t_cutoff * window_mad),
@@ -350,7 +351,7 @@ clean_jumps <- function(distance_df, neighborhood_width = 7, t_cutoff = 3,
   } else {
     if (replace_outliers) {
       replaced_df <- medians_df %>%
-        dplyr::mutate(distance = if_else(condition = all_ok,
+        dplyr::mutate(distance = dplyr::if_else(condition = all_ok,
                                          true = distance,
                                          false = window_med)) %>%
         dplyr::select(-c(window_med, window_mad, med_dist,
@@ -655,27 +656,27 @@ make_monotonic <- function(distance_df,
 
     mon_df <- mon_df %>%
       # Order data
-      arrange(trip_id_performed, event_timestamp) %>%
+      dplyr::arrange(trip_id_performed, event_timestamp) %>%
       # Identify groupings of constant run lengths
-      mutate(constant_id = data.table::rleid(distance)) %>%
-      group_by(constant_id) %>%
+      dplyr::mutate(constant_id = data.table::rleid(distance)) %>%
+      dplyr::group_by(constant_id) %>%
       # Get total run length, and index of each row within length
-      mutate(run_length = n(),
+      dplyr::mutate(run_length = dplyr::n(),
              row_index = dplyr::row_number()) %>%
-      group_by(trip_id_performed) %>%
-      mutate(
+      dplyr::group_by(trip_id_performed) %>%
+      dplyr::mutate(
         # Calculate initial, naiive adjustment up
         initial_adjustment = distance + (add_distance_error * (row_index - 1)),
         # Identify rows where initial adjustment violates monotonicity
         # Establish a new target maximum, instead of using add_distance_error
-        target_dist = if_else(condition = ((row_index != 1) & (dplyr::lead(row_index) == 1)),
-                              true = if_else(condition = (initial_adjustment >= lead(distance)),
-                                             true = distance + ((lead(distance) - distance) * ((row_index - 1) / run_length)),
+        target_dist = dplyr::if_else(condition = ((row_index != 1) & (dplyr::lead(row_index) == 1)),
+                              true = dplyr::if_else(condition = (initial_adjustment >= dplyr::lead(distance)),
+                                             true = distance + ((dplyr::lead(distance) - distance) * ((row_index - 1) / run_length)),
                                              false = 0),
                               false = 0),
         target_dist = tidyr::replace_na(target_dist, 0)) %>%
-      group_by(constant_id) %>%
-      mutate(
+      dplyr::group_by(constant_id) %>%
+      dplyr::mutate(
         # Final max in that group
         target_max = max(target_dist),
         # If a new target max exists, above 0, interpolate (by row) to it linearly
@@ -687,7 +688,7 @@ make_monotonic <- function(distance_df,
         correction_applied = dplyr::if_else(condition = correction_applied,
                                             true = correction_applied,
                                             false = (final_distance != distance))) %>%
-      ungroup() %>%
+      dplyr::ungroup() %>%
       # Remove & rename columns
       dplyr::select(-c(distance, constant_id, run_length, row_index,
                        initial_adjustment, target_dist, target_max)) %>%
@@ -702,7 +703,7 @@ make_monotonic <- function(distance_df,
                       speed = dplyr::if_else(condition = is.na(speed),
                                              true = add_distance_error / as.numeric(dplyr::lead(event_timestamp) - event_timestamp),
                                              false = speed)) %>%
-        ungroup()
+        dplyr::ungroup()
     }
   }
 

@@ -549,7 +549,7 @@ get_gtfs_trajectory_fun <- function(gtfs,
       dplyr::select(trip_id, stop_id, departure_time) %>%
       tidyr::pivot_longer(cols = c("departure_time"),
                           names_to = "in_out",
-                          values_to = "time")
+                          values_to = "stp_time")
   } else if (use_stop_time == "arrival") {
     # If using arrival times, pull that
     trip_timepoints <- gtfs$stop_times %>%
@@ -557,7 +557,7 @@ get_gtfs_trajectory_fun <- function(gtfs,
       dplyr::select(trip_id, stop_id, departure_time) %>%
       tidyr::pivot_longer(cols = c("arrival_time"),
                           names_to = "in_out",
-                          values_to = "time")
+                          values_to = "stp_time")
   } else if (use_stop_time == "both") {
     # If using both, start by pulling dwell times
     # must make sure unique (time, distance) points -- if there are zero-second dwells, this won't be true
@@ -592,7 +592,7 @@ get_gtfs_trajectory_fun <- function(gtfs,
       dplyr::select(trip_id, stop_id, arrival_time, departure_time) %>%
       tidyr::pivot_longer(cols = c("arrival_time", "departure_time"),
                           names_to = "in_out",
-                          values_to = "time")
+                          values_to = "stp_time")
   }
 
   # Get timetable, time-distance pairs
@@ -606,7 +606,7 @@ get_gtfs_trajectory_fun <- function(gtfs,
                   date = as.Date(date)) %>%
     # Filter to desired date range
     dplyr::filter((date >= date_min) & (date <= date_max)) %>%
-    dplyr::mutate(hour_num = as.numeric(substr(time, start = 1, stop = 2)),
+    dplyr::mutate(hour_num = as.numeric(substr(stp_time, start = 1, stop = 2)),
                   # If past midnight, increment date
                   date = dplyr::if_else(condition = (hour_num >= 24),
                                         true = (date + 1),
@@ -615,14 +615,14 @@ get_gtfs_trajectory_fun <- function(gtfs,
                   hour_num = dplyr::if_else(condition = (hour_num >= 24),
                                             true = (hour_num - 24),
                                             false = hour_num),
-                  # Format time string
-                  time = paste(sprintf("%02d", hour_num), substr(time, start = 3, stop = 8),
+                  # Format stp_time string
+                  stp_time = paste(sprintf("%02d", hour_num), substr(stp_time, start = 3, stop = 8),
                                sep = ""),
                   # Convert time string to date type
-                  event_timestamp = as.POSIXct(paste(date, time, sep = " "),
+                  event_timestamp = as.POSIXct(paste(date, stp_time, sep = " "),
                                                format = "%Y-%m-%d %H:%M:%S",
                                                tz = agency_timezone)) %>%
-    dplyr::select(-c(date, hour_num, time)) %>%
+    dplyr::select(-c(date, hour_num, stp_time)) %>%
     dplyr::rename(trip_id_performed = trip_id)
 
   # Correct for monotonicity

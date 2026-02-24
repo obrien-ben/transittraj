@@ -22,15 +22,30 @@ NULL
 #' @name set_globals
 utils::globalVariables(c(
   # GTFS
-  "agency_id", "service_id", "roud_id", "stop_id", "stop_lat", "stop_lon",
+  "agency_id", "service_id", "route_id", "stop_id", "stop_lat", "stop_lon",
   "stop_sequence", "trip_id", "shape_pt_lat", "shape_pt_lon",
+  "departure_time", "arrival_time", "direction_id", "shape_id", "stop_name",
+  "shape_pt_sequence",
   # TIDES
   "trip_id_performed", "event_timestamp", "vehicle_id", "location_ping_id",
-  "operator_id", "speed", "latitude", "longitude",
+  "operator_id", "speed", "latitude", "longitude", "distance",
   # Internal to transittraj functions
   "delta_dist", "delta_time", "max_dist", "min_dist", "max_time", "min_time",
   "trip_distance", "trip_distance", "duration", "max_dist_gap", "max_t_gap",
-  "dist_ok", "dist_gap_ok", "t_gap_ok"
+  "dist_ok", "dist_gap_ok", "t_gap_ok", "dur_ok", "all_ok", "window_med",
+  "window_mad", "is_implosion", "is_tail", "med_dist", "mad_ok", "dev_ok",
+  "ignore_observation", "all_ok", "n_veh", "n_oper", "remove_trip", "n_obs",
+  "t_start", "t_end", "t_interval", "time_range", "n_subtrips_in_range",
+  "subtrip", "file_provided_status", "dwell_time", "hour_num", "monotonic_dist",
+  "constant_id", "row_index", "initial_adjustment", "run_length", "target_dist",
+  "target_max", "correction_applied", "final_distance", "time_sec",
+  "replace_na", "corrected_implied_speed", "fc_delta", "initial_distance",
+  "final_speed", "initial_speed", "interp", "x", "route_color", "gtfs_stops",
+  "min_dist_index", "max_dist_index", "before_min", "after_max", "remove_trip",
+  "obs_ok", "field", "field_provided_status", "is_weak", "is_strict",
+  "required_field", "fc_alpha", "fc_beta", "sum_sq", "is_fc_speed",
+  "field_type_ok", "field_present", "x_spatial", "y_spatial", "stp_time",
+  "point_geom"
   ))
 
 #' Calculates numerical inverse of a trajectory function
