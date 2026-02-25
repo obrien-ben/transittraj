@@ -18,9 +18,9 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/data-workflow.html">data-workflow</a></li>
-    <li><a class="dropdown-item" href="../articles/input-data.html">input-data</a></li>
-    <li><a class="dropdown-item" href="../articles/trajectories.html">trajectories</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/input-data.html">Input Data</a></li>
+    <li><a class="dropdown-item" href="../article/data-workflow.html">AVL Cleaning</a></li>
+    <li><a class="dropdown-item" href="../article/trajectories.html">Intro to Trajectories</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -37,9 +37,9 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="gtfs-helpers">GTFS Helpers<a class="anchor" aria-label="anchor" href="#gtfs-helpers"></a></h2>
 
-
+      <div class="section-desc"><p>Functions to manipulate tidygtfs objects.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -48,66 +48,10 @@
 
       <dl><dt>
 
-          <code><a href="clean_incomplete_trips.html">clean_incomplete_trips()</a></code>
-
-        </dt>
-        <dd>Filters out entire trips which do not meet distance or duration requirements.</dd>
-
-        <dt>
-
-          <code><a href="clean_jumps.html">clean_jumps()</a></code>
-
-        </dt>
-        <dd>Applies median filters to detect large jumps (i.e., outliers) in the trajectories.</dd>
-
-        <dt>
-
-          <code><a href="clean_overlapping_subtrips.html">clean_overlapping_subtrips()</a></code>
-
-        </dt>
-        <dd>Removes trips with multiple overlapping operators or vehicles assigned to the same trip number.</dd>
-
-        <dt>
-
-          <code><a href="correct_speeds_fun.html">correct_speeds_fun()</a></code>
-
-        </dt>
-        <dd>Corrects speeds to Fristch-Carlson constraints, recursively.</dd>
-
-        <dt>
-
-          <code><a href="export_animation.html">export_animation()</a></code>
-
-        </dt>
-        <dd>Save your animation at a desired quality.</dd>
-
-        <dt>
-
           <code><a href="filter_by_route.html">filter_by_route()</a></code>
 
         </dt>
         <dd>Filter GTFS to a desired route(s) and direction(s).</dd>
-
-        <dt>
-
-          <code><a href="get_gtfs_trajectory_fun.html">get_gtfs_trajectory_fun()</a></code>
-
-        </dt>
-        <dd>Fits continuous trajectory interpolating curves from GTFS schedule data.</dd>
-
-        <dt>
-
-          <code><a href="get_inverse_traj.html">get_inverse_traj()</a></code>
-
-        </dt>
-        <dd>Calculates numerical inverse of a trajectory function</dd>
-
-        <dt>
-
-          <code><a href="get_linear_distances.html">get_linear_distances()</a></code>
-
-        </dt>
-        <dd>Linearizes latitude-longitude GPS points to a provided route shape.</dd>
 
         <dt>
 
@@ -118,12 +62,86 @@
 
         <dt>
 
+          <code><a href="project_onto_route.html">project_onto_route()</a></code>
+
+        </dt>
+        <dd>Projects points to linear distances along a route shape.</dd>
+
+        <dt>
+
           <code><a href="get_stop_distances.html">get_stop_distances()</a></code>
 
         </dt>
         <dd>Get the distances of stops along routes.</dd>
 
         <dt>
+
+          <code><a href="plot_interactive_gtfs.html">plot_interactive_gtfs()</a></code>
+
+        </dt>
+        <dd>Generates a Leaflet viewer of GTFS routes and stops.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="avl-cleaning">AVL Cleaning<a class="anchor" aria-label="anchor" href="#avl-cleaning"></a></h2>
+
+      <div class="section-desc"><p>Functions to clean AVL data.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="get_linear_distances.html">get_linear_distances()</a></code>
+
+        </dt>
+        <dd>Linearizes latitude-longitude GPS points to a provided route shape.</dd>
+
+        <dt>
+
+          <code><a href="clean_overlapping_subtrips.html">clean_overlapping_subtrips()</a></code>
+
+        </dt>
+        <dd>Removes trips with multiple overlapping operators or vehicles assigned to the same trip number.</dd>
+
+        <dt>
+
+          <code><a href="clean_jumps.html">clean_jumps()</a></code>
+
+        </dt>
+        <dd>Applies median filters to detect large jumps (i.e., outliers) in the trajectories.</dd>
+
+        <dt>
+
+          <code><a href="clean_incomplete_trips.html">clean_incomplete_trips()</a></code>
+
+        </dt>
+        <dd>Filters out entire trips which do not meet distance or duration requirements.</dd>
+
+        <dt>
+
+          <code><a href="trim_trips.html">trim_trips()</a></code>
+
+        </dt>
+        <dd>Removes observations occurring before a trip's minimum distance, or after a trip's maximum distance.</dd>
+
+        <dt>
+
+          <code><a href="make_monotonic.html">make_monotonic()</a></code>
+
+        </dt>
+        <dd>Corrects distance observations, and optionally speeds, to be weakly or strictly monotonic.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="trajectory-construction">Trajectory Construction<a class="anchor" aria-label="anchor" href="#trajectory-construction"></a></h2>
+
+      <div class="section-desc"><p>Functions to build trajectory objections.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="get_trajectory_fun.html">get_trajectory_fun()</a></code>
 
@@ -132,54 +150,21 @@
 
         <dt>
 
-          <code><a href="interpolate_distances_group.html">interpolate_distances_group()</a></code>
+          <code><a href="get_gtfs_trajectory_fun.html">get_gtfs_trajectory_fun()</a></code>
 
         </dt>
-        <dd>Distance interpolation for group trajectories</dd>
+        <dd>Fits continuous trajectory interpolating curves from GTFS schedule data.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="trajectory-plotting">Trajectory Plotting<a class="anchor" aria-label="anchor" href="#trajectory-plotting"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Functions to plot trajectories.</p></div>
 
-          <code><a href="interpolate_distances_single.html">interpolate_distances_single()</a></code>
+      <dl></dl></div><div class="section level2">
 
-        </dt>
-        <dd>Distance interpolation for single trajectories</dd>
 
-        <dt>
 
-          <code><a href="interpolate_times_group.html">interpolate_times_group()</a></code>
 
-        </dt>
-        <dd>Time interpolation for grouped trajectories</dd>
-
-        <dt>
-
-          <code><a href="interpolate_times_single.html">interpolate_times_single()</a></code>
-
-        </dt>
-        <dd>Time interpolation for single trajectories</dd>
-
-        <dt>
-
-          <code><a href="make_monotonic.html">make_monotonic()</a></code>
-
-        </dt>
-        <dd>Corrects distance observations, and optionally speeds, to be weakly or strictly monotonic.</dd>
-
-        <dt>
-
-          <code><a href="new_avltrajectory_group.html">new_avltrajectory_group()</a></code>
-
-        </dt>
-        <dd>Constructor for grouped trajectory class</dd>
-
-        <dt>
-
-          <code><a href="new_avltrajectory_single.html">new_avltrajectory_single()</a></code>
-
-        </dt>
-        <dd>Constructor for single trajectory class</dd>
-
-        <dt>
+      <dl><dt>
 
           <code><a href="plot.avltrajectory_group.html">plot(<i>&lt;avltrajectory_group&gt;</i>)</a></code> <code><a href="plot.avltrajectory_group.html">plot(<i>&lt;avltrajectory_single&gt;</i>)</a></code>
 
@@ -195,33 +180,28 @@
 
         <dt>
 
-          <code><a href="plot_df_setup.html">plot_df_setup()</a></code>
-
-        </dt>
-        <dd>Set up dataframe &amp; validate of point objects for vehicle animations</dd>
-
-        <dt>
-
-          <code><a href="plot_format_setup.html">plot_format_setup()</a></code>
-
-        </dt>
-        <dd>Function to set up plot formats.</dd>
-
-        <dt>
-
-          <code><a href="plot_interactive_gtfs.html">plot_interactive_gtfs()</a></code>
-
-        </dt>
-        <dd>Generates a Leaflet viewer of GTFS routes and stops.</dd>
-
-        <dt>
-
           <code><a href="plot_trajectory.html">plot_trajectory()</a></code>
 
         </dt>
         <dd>Plot vehicle trajectories or AVL data.</dd>
 
         <dt>
+
+          <code><a href="export_animation.html">export_animation()</a></code>
+
+        </dt>
+        <dd>Save your animation at a desired quality.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="methods-for-trajectories">Methods for Trajectories<a class="anchor" aria-label="anchor" href="#methods-for-trajectories"></a></h2>
+
+      <div class="section-desc"><p>Functions for using trajectories.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="predict.avltrajectory_group.html">predict(<i>&lt;avltrajectory_group&gt;</i>)</a></code> <code><a href="predict.avltrajectory_group.html">predict(<i>&lt;avltrajectory_single&gt;</i>)</a></code>
 
@@ -237,61 +217,21 @@
 
         <dt>
 
-          <code><a href="project_onto_route.html">project_onto_route()</a></code>
-
-        </dt>
-        <dd>Projects points to linear distances along a route shape.</dd>
-
-        <dt>
-
-          <code><a href="set_globals.html">set_globals</a></code>
-
-        </dt>
-        <dd>Set global variables to use throughout, silencing notes during check.</dd>
-
-        <dt>
-
           <code><a href="summary.avltrajectory_group.html">summary(<i>&lt;avltrajectory_group&gt;</i>)</a></code> <code><a href="summary.avltrajectory_group.html">summary(<i>&lt;avltrajectory_single&gt;</i>)</a></code>
 
         </dt>
         <dd>Summary function for AVL trajectories.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="data-validation">Data Validation<a class="anchor" aria-label="anchor" href="#data-validation"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Functions for validating data.</p></div>
 
-          <code><a href="trim_trips.html">trim_trips()</a></code>
+      <dl></dl></div><div class="section level2">
 
-        </dt>
-        <dd>Removes observations occurring before a trip's minimum distance, or after a trip's maximum distance.</dd>
 
-        <dt>
 
-          <code><a href="validate_gtfs_input.html">validate_gtfs_input()</a></code>
 
-        </dt>
-        <dd>Function to quickly validate whether input GTFS has required tables and fields within those tables.</dd>
-
-        <dt>
-
-          <code><a href="validate_input_to_tides.html">validate_input_to_tides()</a></code>
-
-        </dt>
-        <dd>Uses <code>validate_tides</code> and an input vector of needed fields to check whether an AVL DF meets the requirements of a given function.</dd>
-
-        <dt>
-
-          <code><a href="validate_monotonicity.html">validate_monotonicity()</a></code>
-
-        </dt>
-        <dd>Check if an AVL dataframe satisfies assumptions of monotonicity.</dd>
-
-        <dt>
-
-          <code><a href="validate_shape_geometry.html">validate_shape_geometry()</a></code>
-
-        </dt>
-        <dd>Function to quickly validate whether an input shape_geometry meets needs</dd>
-
-        <dt>
+      <dl><dt>
 
           <code><a href="validate_tides.html">validate_tides()</a></code>
 
@@ -299,6 +239,22 @@
         <dd>Check if an AVL dataframe meets TIDES standards.</dd>
 
         <dt>
+
+          <code><a href="validate_monotonicity.html">validate_monotonicity()</a></code>
+
+        </dt>
+        <dd>Check if an AVL dataframe satisfies assumptions of monotonicity.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="supporting-datasets">Supporting Datasets<a class="anchor" aria-label="anchor" href="#supporting-datasets"></a></h2>
+
+      <div class="section-desc"><p>Datasets to test with.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="wmata_avl.html">wmata_avl</a></code>
 
@@ -312,7 +268,8 @@
         </dt>
         <dd>WMATA Bus GTFS</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

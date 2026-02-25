@@ -1,4 +1,4 @@
-# trajectories
+# Introduction to Trajectory Objects
 
 ## Introduction
 
@@ -21,6 +21,8 @@ library(dplyr)
 #> The following objects are masked from 'package:base':
 #> 
 #>     intersect, setdiff, setequal, union
+library(sf)
+#> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
 library(ggplot2)
 ```
 
@@ -222,13 +224,10 @@ We can use [`plot()`](https://rdrr.io/r/graphics/plot.default.html) to
 generate a quick and easy plot of all trajectories:
 
 ``` r
-plot(c53_traj) +
-  # This part is optional -- we're doing it to make the
-  # figure more readable for this vignette
-  theme(text = element_text(size = 5))
+plot(c53_traj)
 ```
 
-![](trajectories_files/figure-html/unnamed-chunk-9-1.png)
+![](trajectories_files/figure-html/unnamed-chunk-10-1.png)
 
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html) is intended for
 quick visualizations of trajectories, and as such does not allow for
@@ -272,14 +271,48 @@ traj_plot <- plot_trajectory(
   feature_width = 0.2, feature_alpha = 0.5,
   traj_width = 0.4, traj_alpha = 1
 )
-traj_plot +
-  # This part is optional -- we're doing it to make the
-  # figure more readable for this vignette
-  theme(text = element_text(size = 5))
+traj_plot
 ```
 
-![](trajectories_files/figure-html/unnamed-chunk-11-1.png)
+![](trajectories_files/figure-html/unnamed-chunk-12-1.png)
+
+Check out
+[`help(plot_trajectory)`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md)
+for a full discussion of the plotting features available.
 
 ### Line Animations
 
+Another fun way to visualize transit vehicle trajectories is to animate
+them. Use `plot_line_animation()` to animate vehicles, as points, moving
+along a straight line that represents the route.
+
+The formatting process works very similarly with `plot_line_animation()`
+as it does with `plot_trajector()`. The main difference is that vehicle
+trajectories and features are not points, instead of lines, so we must
+change their `shape` attribute, rather than `linetype`, and their
+`outline`, rather than `color`:
+
+``` r
+stop_formatting <- data.frame(timepoint = c("Yes", "No"),
+                              outline = c("firebrick", "grey30"),
+                              shape = c(22, 21))
+```
+
+Now we can generate our line animation:
+
+``` r
+line_anim <- plot_animated_line(
+  trajectory = c53_traj,
+  feature_distances = c53_stops,
+  feature_outline = stop_formatting,
+  feature_shape = stop_formatting,
+  feature_size = 2.5, feature_stroke = 1.5,
+  distance_lim = c(3000, 8000)
+)
+```
+
+Example coming soon.
+
 ### Map Animations
+
+Example coming soon.
