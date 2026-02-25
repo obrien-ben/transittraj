@@ -1,4 +1,4 @@
-# plotting-trajectories
+# Plotting and Visualization Trajectory Data
 
 ## Introduction
 

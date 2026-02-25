@@ -1,4 +1,4 @@
-# trajectory-objects
+# Understanding Trajectory Objects
 
 ## Introduction
 
