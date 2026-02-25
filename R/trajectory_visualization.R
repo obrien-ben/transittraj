@@ -654,7 +654,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
   } else {
     # Otherwise, time has to be a date
     anim_map <- anim_map +
-      ggplot2::labs(subtitle = "{round_date(frame_time, unit = \"second\")}")
+      ggplot2::labs(subtitle = "{round(frame_time, units = \"secs\")}")
   }
 
   return(anim_map)

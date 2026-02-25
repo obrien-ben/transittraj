@@ -292,8 +292,6 @@ stop_formatting <- data.frame(timepoint = c("Yes", "No"),
                               outline = c("red1", "grey30"),
                               shape = c(22, 21))
 florida_U_lims <- c(9500, 15500)
-focus_trips <- unique((c53_mono %>%
-                         arrange(event_timestamp))$trip_id_performed)[17:20]
 ```
 
 Now we can generate our line animation. We'll use the field `label_field` to
@@ -304,33 +302,32 @@ tell the function to label each stop point with the `stop_name` column in
 line_anim <- plot_animated_line(
   # Add trajectory & feature data
   trajectory = c53_traj, feature_distances = c53_stops,
-  distance_lim = florida_U_lims, plot_trips = focus_trips,
+  distance_lim = florida_U_lims, timestep = 1,
   # Format features
   feature_outline = stop_formatting,
   feature_shape = stop_formatting,
-  feature_size = 2, feature_stroke = 1.25,
+  feature_size = 3, feature_stroke = 1.5,
   # Add labels
   label_field = "stop_name",
-  label_pos = "right", label_size = 2,
+  label_pos = "right", label_size = 3,
   # Format route & vehicles
   route_color = "indianred2",
-  veh_alpha = 0.9, timestep = 1
+  veh_alpha = 0.9, veh_size = 4
 )
 line_anim
 ```
 
 ``` {r eval = FALSE, echo = FALSE}
-export_animation(anim_object = line_anim,
-                 path = "C:\\Users\\obrie\\Desktop\\c53_Florida_U_example.gif",
-                 duration = 20,
-                 dpi = 150,
-                 height = 6,
-                 width = 3.5)
+gganimate::animate(line_anim,
+                   duration = 60, fps = 30,
+                   height = 1080, width = 350, units = "px",
+                   renderer = gganimate::av_renderer())
 ```
 
-
 ``` {r, echo = FALSE}
-knitr::include_graphics("https://drive.google.com/uc?id=1xIQ5det3ll7-eyvvjGUAPnBRUf20ngBe")
+library(vembedr)
+embed_url("https://www.youtube.com/watch?v=WP4F62O9gws") %>%
+  use_align("center")
 ```
 
 ## Map Animations
@@ -346,25 +343,26 @@ two visualization functions.
 map_anim <- plot_animated_map(
   # Add trajectory, shape, & feature data
   trajectory = c53_traj,
-  shape_geometry = c53_shape, feature_distances = c53_stops,
+  shape_geometry = c53_shape,
+  feature_distances = c53_stops,
   # Format features
   feature_outline = stop_formatting,
   feature_shape = stop_formatting,
-  feature_size = 1.25, feature_stroke = 1,
+  feature_size = 3, feature_stroke = 2,
   # Format route
-  route_color = "indianred3", route_width = 2,
-  bbox_expand = 700
+  route_color = "indianred3", route_width = 4,
+  bbox_expand = 700,
+  # Format vehicles
+  veh_size = 6, veh_stroke = 3, veh_alpha = 0.9
 )
 map_anim
 ```
 
 ``` {r, echo = FALSE, eval = FALSE}
-export_animation(anim_object = map_anim,
-                 path = "C:\\Users\\obrie\\Desktop\\c53_map_example.gif",
-                 duration = 45,
-                 dpi = 200,
-                 height = 6,
-                 width = 5.5)
+gganimate::animate(map_anim,
+                   duration = 60, fps = 30,
+                   height = 1080, width = 920, units = "px",
+                   renderer = gganimate::av_renderer())
 ```
 
 ``` {r, echo = FALSE, eval = FALSE}

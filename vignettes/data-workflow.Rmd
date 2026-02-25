@@ -344,7 +344,6 @@ observations were removed:
 c53_step4_removals <- clean_jumps(
   # Same settings as before
   distance_df = c53_cleaned_subtrips,
-  neighborhood_width = 7,
   max_median_deviation = c53_max_jump, min_median_deviation = c53_min_jump,
   evaluate_implosions = FALSE, evaluate_tails = FALSE,
   t_cutoff = Inf,
@@ -385,8 +384,7 @@ jumps_plot <- ggplot() +
   labs(x = "Time",
        y = "Distance (m)",
        title = "Outliers on C53",
-       subtitle = "Trip 13478100") +
-  theme(text = element_text(size = 5))
+       subtitle = "Trip 13478100")
 jumps_plot
 ```
 
