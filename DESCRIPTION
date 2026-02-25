@@ -45,4 +45,6 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-Config/Needs/website: rmarkdown
+Config/Needs/website:
+    rmarkdown,
+    vembedr
