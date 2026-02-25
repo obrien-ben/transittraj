@@ -1,4 +1,4 @@
-# input-data
+# Understanding Data Inputs
 
 ## Introduction
 
