@@ -183,6 +183,10 @@ not allow for much customization. In the next section, we'll use
 
 ## Detailed Trajectories
 
+To add features (such as stops) and customize formatting, we recommend using
+`plot_trajectory()`. This function starts of similar to `plot()`, taking a
+trajectory object,
+
 ``` {r, out.width = "100%", fig.height = 2, dpi = 600, fig.align = "center"}
 # Set formatting DF for our stops
 stop_formatting <- data.frame(timepoint = c("Yes", "No"),

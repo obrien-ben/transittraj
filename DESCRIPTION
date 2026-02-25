@@ -30,6 +30,7 @@ Imports:
     ivs,
     leaflet,
     magrittr,
+    prettymapr,
     purrr,
     rlang,
     sf,
