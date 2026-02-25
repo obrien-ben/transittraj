@@ -1,5 +1,5 @@
 ---
-title: "plotting-trajectories"
+title: "Plotting and Visualization Trajectory Data"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{plotting-trajectories}

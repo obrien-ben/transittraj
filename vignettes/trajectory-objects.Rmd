@@ -1,5 +1,5 @@
 ---
-title: "trajectory-objects"
+title: "Understanding Trajectory Objects"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{trajectory-objects}
