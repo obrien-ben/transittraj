@@ -117,7 +117,7 @@ print(c53_shape)
 We now have all the data we need to proceed. But before we do, let's visualize
 the AVL point and route geometry so we understand what we're working with:
 
-``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
+``` {r, out.width = "150%", dpi = 600, fig.align = "center"}
 # Convert GPS points to spatial objects
 c53_sf <- c53_avl %>%
   # As SF
@@ -356,7 +356,7 @@ print(c53_step4_removals)
 Let's explore pings 16770 and 16798 from trip 1306100 as an example. We can
 plot the trip in this area to visualize the outliers:
 
-``` {r, out.width = "100%", fig.height = 2, dpi = 600, fig.align = "center"}
+``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
 # Filter dataframe to our tirp & distances
 plot_df <- c53_cleaned_subtrips %>%
   filter(trip_id_performed == "1306100") %>%
@@ -468,7 +468,7 @@ print(c53_step5_removals)
 Most of these were removed because of a large gap in data. Let's take a look
 at one, trip 21956100:
 
-``` {r, out.width = "100%", fig.height = 2, dpi = 600, fig.align = "center"}
+``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
 # Filter dataframe to our tirp & distances
 plot_df <- c53_cleaned_subtrips %>%
   filter(trip_id_performed == "21956100") %>%
@@ -550,7 +550,7 @@ print(c53_step6_removals)
 
 Plotting the points removed along trip 35294100:
 
-``` {r, out.width = "100%", fig.height = 2, dpi = 600, fig.align = "center"}
+``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
 # Filter dataframe to our tirp & distances
 plot_df <- c53_cleaned_incompletes %>%
   filter(trip_id_performed == "35294100") %>%
@@ -665,7 +665,7 @@ c53_mono_changes <- make_monotonic(distance_df = c53_trimmed,
                            return_changes = TRUE)
 ```
 
-``` {r, out.width = "100%", fig.height = 2, dpi = 600, fig.align = "center"}
+``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
 # Set filter parameters
 #plot_trip <- "1306100"
 plot_trip <- "21499100"
