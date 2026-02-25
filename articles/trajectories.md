@@ -13,16 +13,7 @@ Let’s begin by loading the library we’ll be using:
 library(transittraj)
 library(tidytransit)
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 library(sf)
-#> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
 library(ggplot2)
 ```
 
@@ -116,21 +107,24 @@ c53_timepoints <- c53_gtfs$stop_times %>%
 c53_stops <- get_stop_distances(gtfs = c53_gtfs,
                                 shape_geometry = c53_shape,
                                 project_crs = dc_CRS) %>%
-  left_join(y = c53_timepoints, by = "stop_id") %>%
+  left_join(y = c53_timepoints,
+            by = "stop_id") %>%
+  left_join(y = (c53_gtfs$stops %>% select(stop_id, stop_name)),
+            by = "stop_id") %>%
   select(-shape_id) %>%
   mutate(timepoint = if_else(condition = (timepoint == 1),
                              true = "Yes",
                              false = "No"))
 head(c53_stops)
-#> # A tibble: 6 × 3
-#>   stop_id distance timepoint
-#>   <chr>      <dbl> <chr>    
-#> 1 2584        677. No       
-#> 2 2609        880. No       
-#> 3 2683       1155. No       
-#> 4 2793       1605. No       
-#> 5 2811       1807. No       
-#> 6 2867       2037. No
+#> # A tibble: 6 × 4
+#>   stop_id distance timepoint stop_name                  
+#>   <chr>      <dbl> <chr>     <chr>                      
+#> 1 2584        677. No        Alabama Av SE+15 Pl SE     
+#> 2 2609        880. No        Alabama Av SE+Stanton Rd SE
+#> 3 2683       1155. No        Alabama Av SE+18 Pl SE     
+#> 4 2793       1605. No        Alabama Av SE+22 St SE     
+#> 5 2811       1807. No        Alabama Av SE+24 St SE     
+#> 6 2867       2037. No        Alabama Av SE+Jasper St SE
 ```
 
 Now that we have some distances, let’s interpolate using
@@ -142,15 +136,15 @@ c53_stop_crossings <- predict(
   new_distances = c53_stops
 )
 head(c53_stop_crossings)
-#> # A tibble: 6 × 5
-#>   stop_id distance timepoint trip_id_performed      interp
-#>   <chr>      <dbl> <chr>     <chr>                   <dbl>
-#> 1 2584        677. No        10185100          1771274452.
-#> 2 2584        677. No        10249100          1771272909.
-#> 3 2584        677. No        1306100           1771262814.
-#> 4 2584        677. No        13437100          1771259527.
-#> 5 2584        677. No        13478100          1771275106.
-#> 6 2584        677. No        1699100           1771265258.
+#> # A tibble: 6 × 6
+#>   stop_id distance timepoint stop_name              trip_id_performed     interp
+#>   <chr>      <dbl> <chr>     <chr>                  <chr>                  <dbl>
+#> 1 2584        677. No        Alabama Av SE+15 Pl SE 10185100              1.77e9
+#> 2 2584        677. No        Alabama Av SE+15 Pl SE 10249100              1.77e9
+#> 3 2584        677. No        Alabama Av SE+15 Pl SE 1306100               1.77e9
+#> 4 2584        677. No        Alabama Av SE+15 Pl SE 13437100              1.77e9
+#> 5 2584        677. No        Alabama Av SE+15 Pl SE 13478100              1.77e9
+#> 6 2584        677. No        Alabama Av SE+15 Pl SE 1699100               1.77e9
 ```
 
 And now we have the crossing time (labeled `interp`) at each stop, for
@@ -227,7 +221,7 @@ generate a quick and easy plot of all trajectories:
 plot(c53_traj)
 ```
 
-![](trajectories_files/figure-html/unnamed-chunk-10-1.png)
+![](trajectories_files/figure-html/unnamed-chunk-9-1.png)
 
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html) is intended for
 quick visualizations of trajectories, and as such does not allow for
@@ -274,7 +268,7 @@ traj_plot <- plot_trajectory(
 traj_plot
 ```
 
-![](trajectories_files/figure-html/unnamed-chunk-12-1.png)
+![](trajectories_files/figure-html/unnamed-chunk-11-1.png)
 
 Check out
 [`help(plot_trajectory)`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md)
@@ -287,32 +281,68 @@ them. Use `plot_line_animation()` to animate vehicles, as points, moving
 along a straight line that represents the route.
 
 The formatting process works very similarly with `plot_line_animation()`
-as it does with `plot_trajector()`. The main difference is that vehicle
-trajectories and features are not points, instead of lines, so we must
-change their `shape` attribute, rather than `linetype`, and their
-`outline`, rather than `color`:
+as it does with `plot_trajector()`. For this plot, we’ll also set some
+distance limits to zoom in to the Florida Ave-U St corridor of the
+route.
 
 ``` r
 stop_formatting <- data.frame(timepoint = c("Yes", "No"),
-                              outline = c("firebrick", "grey30"),
+                              outline = c("red1", "grey30"),
                               shape = c(22, 21))
+florida_U_lims <- c(9500, 15500)
 ```
 
-Now we can generate our line animation:
+Now we can generate our line animation. We’ll use the field
+`label_field` to tell the function to label each stop point with the
+`stop_name` column in `c53_stops`:
 
 ``` r
 line_anim <- plot_animated_line(
-  trajectory = c53_traj,
-  feature_distances = c53_stops,
+  # Add trajectory & feature data
+  trajectory = c53_traj, feature_distances = c53_stops,
+  distance_lim = florida_U_lims,
+  # Format features
   feature_outline = stop_formatting,
   feature_shape = stop_formatting,
-  feature_size = 2.5, feature_stroke = 1.5,
-  distance_lim = c(3000, 8000)
+  feature_size = 2, feature_stroke = 1.25,
+  # Add labels
+  label_field = "stop_name",
+  label_pos = "right", label_size = 2,
+  # Format route & vehicles
+  route_color = "indianred2",
+  veh_alpha = 0.9, timestep = 1
 )
+line_anim
 ```
+
+![](https://drive.google.com/uc?id=1qQPA2Qlwqe5qiO3F80wLKdzcNC_6Ve9f)
 
 Example coming soon.
 
 ### Map Animations
 
-Example coming soon.
+The final visualization we’ll make is an animated map. The concept is
+similar to the animated line we saw above, but instead of simplifying
+the route, we’ll draw it spatially and show the vehicles traveling
+through the city.
+
+This function has formatting and feature options very similar to the
+previous two visualization functions.
+
+``` r
+map_anim <- plot_animated_map(
+  # Add trajectory, shape, & feature data
+  trajectory = c53_traj,
+  shape_geometry = c53_shape, feature_distances = c53_stops,
+  # Format features
+  feature_outline = stop_formatting,
+  feature_shape = stop_formatting,
+  feature_size = 1.25, feature_stroke = 1,
+  # Format route
+  route_color = "indianred3", route_width = 2,
+  bbox_expand = 700
+)
+map_anim
+```
+
+![](https://drive.google.com/uc?id=1hMztRPm9CanWyOMXwB8kGknn04fhB-fN)
