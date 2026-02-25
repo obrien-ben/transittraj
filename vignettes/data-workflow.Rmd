@@ -1,5 +1,5 @@
 ---
-title: "data-workflow"
+title: "The AVL Cleaning Workflow"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{data-workflow}
@@ -117,7 +117,7 @@ print(c53_shape)
 We now have all the data we need to proceed. But before we do, let's visualize
 the AVL point and route geometry so we understand what we're working with:
 
-``` {r, out.width = "80%", dpi = 600, fig.align = "center"}
+``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
 # Convert GPS points to spatial objects
 c53_sf <- c53_avl %>%
   # As SF

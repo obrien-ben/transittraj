@@ -222,7 +222,7 @@ starting from time values.
 Now its time for the *really* fun part -- plotting our trajectory curves. We
 can use `plot()` to generate a quick and easy plot of all trajectories:
 
-``` {r out.width = "80%", dpi = 600, fig.align = "center"}
+``` {r out.width = "100%", dpi = 600, fig.align = "center"}
 plot(c53_traj)
 ```
 
@@ -251,7 +251,7 @@ to (trajectories or features). The other columns must be `color` and/or
 
 We can plug all that in to `plot_trajectory()` to generate our formatted plot:
 
-``` {r, out.width = "80%", dpi = 600, fig.align = "center"}
+``` {r, out.width = "100%", dpi = 600, fig.align = "center"}
 traj_plot <- plot_trajectory(
   trajectory = c53_traj,
   feature_distances = c53_stops,

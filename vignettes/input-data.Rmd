@@ -1,5 +1,5 @@
 ---
-title: "input-data"
+title: "Understanding Data Inputs"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{input-data}
