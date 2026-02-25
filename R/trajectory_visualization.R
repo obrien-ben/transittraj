@@ -145,6 +145,9 @@
 #' `distance_df`.
 #' @param timestep Optional. If `trajectory` is provided, the time interval, in
 #' seconds, between interpolated observations to plot. Default is 5.
+#' @param convert_to_timezone Optional. Should numeric epoch times be converted
+#' back to readable hour-minute-second time values, using the agency timezone?
+#' Default is `TRUE`.
 #' @param distance_lim Optional. A vector with `(minimum, maximum)` distance
 #' values to plot.
 #' @param center_vehicles Optional. A boolean, should all vehicle points be
@@ -205,6 +208,7 @@
 plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips = NULL,
                                timestep = 5, distance_lim = NULL, center_vehicles = FALSE,
                                feature_distances = NULL, transition_style = "linear",
+                               convert_to_timezone = TRUE,
                                # Format route
                                route_color = "coral", route_width = 3, route_alpha = 1,
                                # Format features
@@ -227,7 +231,8 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
                                  plot_trips = plot_trips,
                                  feature_distances = feature_distances,
                                  distance_lim = distance_lim,
-                                 center_vehicles = center_vehicles)
+                                 center_vehicles = center_vehicles,
+                            convert_to_timezone = convert_to_timezone)
   trips_df <- val_data[[1]]
   feature_distances <- val_data[[2]]
 
@@ -370,8 +375,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
 
   # Theming
   bus_plot <- bus_plot +
-    ggplot2::labs(title = "AVL Animation",
-                  subtitle = "Time: {round(frame_time})",
+    ggplot2::labs(title = "AVL Animation",,
                   y = "Distance") +
     ggplot2::scale_x_continuous(breaks = NULL, name = NULL,
                                 limits = x_lims) +
@@ -388,7 +392,7 @@ plot_animated_line <- function(trajectory = NULL, distance_df = NULL, plot_trips
   } else {
     # Otherwise, time has to be a date
     bus_plot <- bus_plot +
-      ggplot2::labs(subtitle = "{round_date(frame_time, unit = \"second\")}")
+      ggplot2::labs(subtitle = "{round(frame_time, units = \"secs\")}")
   }
 
   return(bus_plot)
@@ -401,6 +405,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
                               center_vehicles = FALSE, feature_distances = NULL,
                               background = "cartolight", background_zoom = 0,
                               bbox_expand = NULL, transition_style = "linear",
+                              convert_to_timezone = TRUE,
                               # Format route
                               route_color = "coral", route_width = 3, route_alpha = 1,
                               # Format features
@@ -423,7 +428,8 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
                                  plot_trips = plot_trips,
                                  feature_distances = feature_distances,
                                  distance_lim = distance_lim,
-                                 center_vehicles = center_vehicles)
+                                 center_vehicles = center_vehicles,
+                            convert_to_timezone = convert_to_timezone)
   trips_df <- val_data[[1]]
   feature_distances <- val_data[[2]]
   # Validate shape geometry
@@ -665,6 +671,7 @@ plot_animated_map <- function(shape_geometry, trajectory = NULL, distance_df = N
 #' @param distance_lim Vector of (minimum, maximum) distance to plot.
 #' @param feature_distances Linear distance to features.
 #' @param center_vehicles Should vehicles be centered
+#' @param convert_to_timezone Should times be converted to timezones
 #' @return plotting dataframe (trips_df)
 #' @keywords internal
 plot_df_setup <- function(trajectory, distance_df,
@@ -672,7 +679,8 @@ plot_df_setup <- function(trajectory, distance_df,
                                timestep,
                                distance_lim,
                                feature_distances,
-                               center_vehicles) {
+                               center_vehicles,
+                          convert_to_timezone) {
 
   # --- Vehicle DF setup ---
   # Check provided trajectories & distance DF, and filter as needed
@@ -703,6 +711,14 @@ plot_df_setup <- function(trajectory, distance_df,
       rlang::abort(message = "Unrecognized trajectory object. Please use get_trajectory_function() to generate a trajectory object.",
                    class = "error_plottraj_inputdata")
     }
+
+    if (convert_to_timezone) {
+      agency_tz <- attr(trajectory, "agency_tz")
+      trips_df <- trips_df %>%
+        dplyr::mutate(event_timestamp = as.POSIXct(event_timestamp,
+                                                   tz = agency_tz))
+    }
+
   } else {
     # If distance_df provided, validate it
     needed_fields <- c("trip_id_performed", "event_timestamp", "distance")
@@ -936,7 +952,7 @@ plot_format_setup <- function(plotting_df,
 #' @export
 plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = NULL,
                             timestep = 5, distance_lim = NULL, center_trajectories = FALSE,
-                            feature_distances = NULL,
+                            feature_distances = NULL, convert_to_timezone = TRUE,
                             # Trajectory line customization
                             traj_color = "coral", traj_type = "solid",
                             traj_width = 1, traj_alpha = 1,
@@ -954,7 +970,8 @@ plot_trajectory <- function(trajectory = NULL, distance_df = NULL, plot_trips = 
                             plot_trips = plot_trips,
                             feature_distances = feature_distances,
                             distance_lim = distance_lim,
-                            center_vehicles = center_trajectories)
+                            center_vehicles = center_trajectories,
+                            convert_to_timezone = convert_to_timezone)
   trips_df <- val_data[[1]]
   feature_distances <- val_data[[2]]
 

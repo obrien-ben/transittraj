@@ -23,7 +23,7 @@ new_avltrajectory_group <- function(trip_id_performed = character(),
                                     traj_fun, inv_traj_fun = NULL,
                                     min_dist, max_dist, min_time, max_time,
                                     traj_type, inv_tol = NULL, max_deriv = 0,
-                                    used_speeds = FALSE,
+                                    used_speeds = FALSE, agency_tz,
                                     ..., class = character()) {
 
   structure(trip_id_performed, class = c(class, "avltrajectory_group"),
@@ -36,7 +36,8 @@ new_avltrajectory_group <- function(trip_id_performed = character(),
             traj_type = traj_type,
             inv_tol = inv_tol,
             max_deriv = max_deriv,
-            used_speeds = used_speeds)
+            used_speeds = used_speeds,
+            agency_tz = agency_tz)
 }
 
 #' Constructor for single trajectory class
@@ -53,7 +54,7 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
                                      traj_fun, inv_traj_fun = NULL,
                                      min_dist, max_dist, min_time, max_time,
                                      traj_type, inv_tol = NULL, max_deriv = 0,
-                                     used_speeds = FALSE) {
+                                     used_speeds = FALSE, agency_tz) {
 
   # Should take in only a single trip ID
   stopifnot(length(trip_id_performed) == 1)
@@ -70,6 +71,7 @@ new_avltrajectory_single <- function(trip_id_performed = character(),
                           inv_tol = inv_tol,
                           max_deriv = max_deriv,
                           used_speeds = used_speeds,
+                          agency_tz = agency_tz,
                           class = "avltrajectory_single")
 }
 
@@ -237,6 +239,9 @@ get_trajectory_fun <- function(distance_df,
     max_deriv = 3
   }
 
+  # Get timezone
+  current_tz <- attr(distance_df$event_timestamp, "tzone")
+
   # Perform calculations for trip bounds
   trip_bounds <- distance_df %>%
     dplyr::group_by(trip_id_performed) %>%
@@ -317,7 +322,8 @@ get_trajectory_fun <- function(distance_df,
                                             traj_type = interp_method,
                                             inv_tol = inv_tol,
                                             max_deriv = max_deriv,
-                                            used_speeds = use_speeds)
+                                            used_speeds = use_speeds,
+                                            agency_tz = current_tz)
 
     return(grouped_traj)
   } else {
@@ -337,7 +343,8 @@ get_trajectory_fun <- function(distance_df,
                                               traj_type = interp_method,
                                               max_deriv = max_deriv,
                                               inv_tol = inv_tol,
-                                              used_speeds = use_speeds)
+                                              used_speeds = use_speeds,
+                                              agency_tz = current_tz)
       return(current_obj)
     })
     names(single_traj_list) <- names(traj_functions)

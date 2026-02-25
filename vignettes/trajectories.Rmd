@@ -259,6 +259,24 @@ traj_plot
 Check out `help(plot_trajectory)` for a full discussion of the plotting features
 available.
 
+The benefits of the fitting
+
+``` {r}
+am_lims <- c(13900, 14600)
+traj_plot2 <- plot_trajectory(
+  trajectory = c53_traj,
+  feature_distances = c53_stops,
+  feature_color = stop_formatting,
+  feature_type = stop_formatting,
+  feature_width = 1, feature_alpha = 0.8,
+  traj_width = 0.6, traj_alpha = 0.6,
+  traj_color = "firebrick",
+  center_trajectories = TRUE,
+  distance_lim = am_lims
+)
+traj_plot2
+```
+
 ## Line Animations
 
 Another fun way to visualize transit vehicle trajectories is to animate them.
@@ -274,6 +292,8 @@ stop_formatting <- data.frame(timepoint = c("Yes", "No"),
                               outline = c("red1", "grey30"),
                               shape = c(22, 21))
 florida_U_lims <- c(9500, 15500)
+focus_trips <- unique((c53_mono %>%
+                         arrange(event_timestamp))$trip_id_performed)[17:20]
 ```
 
 Now we can generate our line animation. We'll use the field `label_field` to
@@ -284,7 +304,7 @@ tell the function to label each stop point with the `stop_name` column in
 line_anim <- plot_animated_line(
   # Add trajectory & feature data
   trajectory = c53_traj, feature_distances = c53_stops,
-  distance_lim = florida_U_lims,
+  distance_lim = florida_U_lims, plot_trips = focus_trips,
   # Format features
   feature_outline = stop_formatting,
   feature_shape = stop_formatting,
@@ -302,17 +322,16 @@ line_anim
 ``` {r eval = FALSE, echo = FALSE}
 export_animation(anim_object = line_anim,
                  path = "C:\\Users\\obrie\\Desktop\\c53_Florida_U_example.gif",
-                 duration = 45,
-                 dpi = 200,
+                 duration = 20,
+                 dpi = 150,
                  height = 6,
                  width = 3.5)
 ```
 
-``` {r, echo = FALSE}
-knitr::include_graphics("https://drive.google.com/uc?id=1qQPA2Qlwqe5qiO3F80wLKdzcNC_6Ve9f")
-```
 
-Example coming soon.
+``` {r, echo = FALSE}
+knitr::include_graphics("https://drive.google.com/uc?id=1xIQ5det3ll7-eyvvjGUAPnBRUf20ngBe")
+```
 
 ## Map Animations
 
@@ -348,6 +367,6 @@ export_animation(anim_object = map_anim,
                  width = 5.5)
 ```
 
-``` {r, echo = FALSE}
+``` {r, echo = FALSE, eval = FALSE}
 knitr::include_graphics("https://drive.google.com/uc?id=1hMztRPm9CanWyOMXwB8kGknn04fhB-fN")
 ```
