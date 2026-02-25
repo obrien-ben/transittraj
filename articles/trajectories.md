@@ -274,6 +274,26 @@ Check out
 [`help(plot_trajectory)`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md)
 for a full discussion of the plotting features available.
 
+The benefits of the fitting
+
+``` r
+am_lims <- c(13900, 14600)
+traj_plot2 <- plot_trajectory(
+  trajectory = c53_traj,
+  feature_distances = c53_stops,
+  feature_color = stop_formatting,
+  feature_type = stop_formatting,
+  feature_width = 1, feature_alpha = 0.8,
+  traj_width = 0.6, traj_alpha = 0.6,
+  traj_color = "firebrick",
+  center_trajectories = TRUE,
+  distance_lim = am_lims
+)
+traj_plot2
+```
+
+![](trajectories_files/figure-html/unnamed-chunk-12-1.png)
+
 ### Line Animations
 
 Another fun way to visualize transit vehicle trajectories is to animate
@@ -290,6 +310,8 @@ stop_formatting <- data.frame(timepoint = c("Yes", "No"),
                               outline = c("red1", "grey30"),
                               shape = c(22, 21))
 florida_U_lims <- c(9500, 15500)
+focus_trips <- unique((c53_mono %>%
+                         arrange(event_timestamp))$trip_id_performed)[17:20]
 ```
 
 Now we can generate our line animation. We’ll use the field
@@ -300,7 +322,7 @@ Now we can generate our line animation. We’ll use the field
 line_anim <- plot_animated_line(
   # Add trajectory & feature data
   trajectory = c53_traj, feature_distances = c53_stops,
-  distance_lim = florida_U_lims,
+  distance_lim = florida_U_lims, plot_trips = focus_trips,
   # Format features
   feature_outline = stop_formatting,
   feature_shape = stop_formatting,
@@ -315,9 +337,7 @@ line_anim <- plot_animated_line(
 line_anim
 ```
 
-![](https://drive.google.com/uc?id=1qQPA2Qlwqe5qiO3F80wLKdzcNC_6Ve9f)
-
-Example coming soon.
+![](https://drive.google.com/uc?id=1xIQ5det3ll7-eyvvjGUAPnBRUf20ngBe)
 
 ### Map Animations
 
@@ -344,5 +364,3 @@ map_anim <- plot_animated_map(
 )
 map_anim
 ```
-
-![](https://drive.google.com/uc?id=1hMztRPm9CanWyOMXwB8kGknn04fhB-fN)
