@@ -30,7 +30,7 @@ You can install the development version of transittraj from
 
 ``` r
 # install.packages("pak")
-pak::pak("obrien-ben/transittraj")
+pak::pak("UTEL-UIUC/transittraj")
 ```
 
 ## What and Why
@@ -97,7 +97,7 @@ attributes:
 
 <div class="figure" style="text-align: center">
 
-<img src="man/figures/README-example_traj.png" alt="A `transittraj` trajectory meeting our four requirements" width="75%" />
+<img src="man/figures/README-example_traj.png" alt="A `transittraj` trajectory meeting our four requirements" width="80%" />
 <p class="caption">
 
 A `transittraj` trajectory meeting our four requirements
@@ -120,11 +120,11 @@ some of the vignettes below to get started.
 Check out the following vignettes to learn more about how to use
 `transittraj`:
 
-- [Overview of
-  Data](https://obrien-ben.github.io/transittraj/articles/input-data.html)
+- [Understanding Data
+  Inputs](https://utel-uiuc.github.io/transittraj/articles/input-data.html)
 
-- [AVL
-  Cleaning](https://obrien-ben.github.io/transittraj/articles/data-workflow.html)
+- [The AVL Cleaning
+  Workflow](https://utel-uiuc.github.io/transittraj/articles/data-workflow.html)
 
 - [Using
-  Trajectories](https://obrien-ben.github.io/transittraj/articles/intro-trajectories.html)
+  Trajectories](https://utel-uiuc.github.io/transittraj/articles/intro-trajectories.html)
