@@ -25,7 +25,7 @@ monotonic, invertible, and differentiable trajectory curves. By doing
 so, `transittraj` provides versatile and powerful tools to analyze
 transit system performance and support decision-making.
 
-You can install the development version of transittraj from
+You can install the development version of `transittraj` from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -128,6 +128,19 @@ Check out the following vignettes to learn more about how to use
 
 - [Using
   Trajectories](https://utel-uiuc.github.io/transittraj/articles/intro-trajectories.html)
+
+## Works in Progress
+
+This package is still in early development. In prepartion for an
+eventual submission to CRAN, we’re still working on the following:
+
+- Examples in all function documentation
+
+- Sample datasets to include with `transittraj`
+
+- Formal automated testing
+
+- More vignettes
 
 ## Citation
 
