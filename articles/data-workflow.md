@@ -579,10 +579,10 @@ gaps_plot <- ggplot() +
   # Plot the points
   geom_line(data = plot_df,
             aes(x = event_timestamp, y = distance),
-            linewidth = 2, color = "indianred") +
+            linewidth = 2, color = "lightcoral") +
   geom_point(data = plot_df,
              aes(x = event_timestamp, y = distance),
-             size = 2, color = "firebrick") +
+             size = 2, color = "firebrick4") +
   # Format the plot
   theme_minimal() +
   labs(x = "Time",
@@ -822,11 +822,11 @@ mono_plot <- ggplot() +
   geom_label(data = plot_df_before,
              aes(x = event_timestamp, y = distance,
                  color = "Uncorrected", label = speed_label),
-            nudge_y = -15, size = 2, show.legend = FALSE) +
+            nudge_y = -15, size = 2.5, show.legend = FALSE) +
   geom_label(data = plot_df_after,
              aes(x = event_timestamp, y = distance,
                  color = "Corrected", label = speed_label),
-            nudge_y = 15, size = 2, show.legend = FALSE) +
+            nudge_y = 15, size = 2.5, show.legend = FALSE) +
   scale_color_manual(name = "Correction",
                      values=  c("Uncorrected" = "indianred",
                                 "Corrected" = "darkgreen")) +
