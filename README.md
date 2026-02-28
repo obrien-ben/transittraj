@@ -27,16 +27,14 @@ transit system performance and support decision-making.
 
 <div class="figure" style="text-align: center">
 
-<img src="man/figures/README-example2.png" alt="`transittraj` converts noisy GPS data (left) to a trajectory (right) meeting the four requirements discussed below" width="100%" />
+<img src="man/figures/README-example2.png" alt="`transittraj` turns noisy GPS data (left) into a trajectory (right) meeting the four requirements discussed below" width="100%" />
 <p class="caption">
 
-`transittraj` converts noisy GPS data (left) to a trajectory (right)
+`transittraj` turns noisy GPS data (left) into a trajectory (right)
 meeting the four requirements discussed below
 </p>
 
 </div>
-
-Upgrading GTFS validator to ignore tables with zero observations
 
 ## Installation
 

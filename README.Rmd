@@ -34,11 +34,9 @@ continuous, monotonic, invertible, and differentiable trajectory curves.
 By doing so, `transittraj` provides versatile and powerful tools to analyze
 transit system performance and support decision-making.
 
-``` {r, echo = FALSE, out.width = "100%", fig.align = "center", fig.cap = "`transittraj` converts noisy GPS data (left) to a trajectory (right) meeting the four requirements discussed below"}
+``` {r, echo = FALSE, out.width = "100%", fig.align = "center", fig.cap = "`transittraj` turns noisy GPS data (left) into a trajectory (right) meeting the four requirements discussed below"}
 knitr::include_graphics("man/figures/README-example2.png")
 ```
-
-Upgrading GTFS validator to ignore tables with zero observations
 
 ## Installation
 
