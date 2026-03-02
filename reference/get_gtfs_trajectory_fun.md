@@ -47,15 +47,15 @@ get_gtfs_trajectory_fun(
 
 - date_min:
 
-  Optional. A date object. The earliest date in `calendar.txt` to create
-  a trip trajectory for. Default is `NULL`, where the first date in
-  `calendar.txt` will be used.
+  Optional. A date object. The earliest date in `calendar_dates.txt` to
+  create a trip trajectory for. Default is `NULL`, where the first date
+  in `calendar_dates.txt` will be used.
 
 - date_max:
 
-  Optional. A date object. The latest date in `calendar.txt` to create a
-  trip trajectory for. Default is `NULL`, where the last date in
-  `calendar.txt` will be used.
+  Optional. A date object. The latest date in `calendar_dates.txt` to
+  create a trip trajectory for. Default is `NULL`, where the last date
+  in `calendar_dates.txt` will be used.
 
 - agency_timezone:
 
