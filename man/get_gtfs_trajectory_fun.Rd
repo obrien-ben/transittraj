@@ -33,12 +33,12 @@ Euclidian projection, such as the appropriate UTM zone. Default is 4326 (WGS
 84 ellipsoid).}
 
 \item{date_min}{Optional. A date object. The earliest date in
-\code{calendar.txt} to create a trip trajectory for. Default is \code{NULL}, where the
-first date in \code{calendar.txt} will be used.}
+\code{calendar_dates.txt} to create a trip trajectory for. Default is \code{NULL}, where the
+first date in \code{calendar_dates.txt} will be used.}
 
 \item{date_max}{Optional. A date object. The latest date in
-\code{calendar.txt} to create a trip trajectory for. Default is \code{NULL}, where the
-last date in \code{calendar.txt} will be used.}
+\code{calendar_dates.txt} to create a trip trajectory for. Default is \code{NULL}, where the
+last date in \code{calendar_dates.txt} will be used.}
 
 \item{agency_timezone}{Optional. A timezone string (see \code{OlsonNames()})
 indicating he appropriate timezone for the stop times. Default is \code{NULL},

@@ -194,7 +194,7 @@ get_trajectory_fun <- function(distance_df,
   validate_input_to_tides(needed_fields, distance_df)
   # Monotonicty -- must be strict if finding inverse
   mono_check <- validate_monotonicity(distance_df,
-                                      check_speed = TRUE)
+                                      check_speed = use_speeds)
   if (use_speeds) { # If using speeds, check all three bools; otherwise, only need first two
     max_mono_check <- 3
   } else {
@@ -204,10 +204,11 @@ get_trajectory_fun <- function(distance_df,
   if (find_inverse_function) {
     # If finding an inverse function, must error if montonicity not met
     if (!all(checked_conditions)) {
-      stop(paste(c("The following monotonicity conditions are not satisfied:",
-                   names(checked_conditions)[!checked_conditions],
-                   "\nMonotonicity required inverse function."),
-                 collapse = " "))
+      rlang::abort(message = paste(c("The following monotonicity conditions are not satisfied:",
+                                     names(checked_conditions)[!checked_conditions],
+                                     "\nMonotonicity required inverse function."),
+                                   collapse = " "),
+                   class = "error_tidesval_mono")
     }
   } else {
     # If not finding inverse function, can proveed but will give warning
@@ -464,11 +465,11 @@ get_trajectory_fun <- function(distance_df,
 #' @inheritParams get_trajectory_fun
 #' @inheritParams make_monotonic
 #' @param date_min Optional. A date object. The earliest date in
-#' `calendar.txt` to create a trip trajectory for. Default is `NULL`, where the
-#' first date in `calendar.txt` will be used.
+#' `calendar_dates.txt` to create a trip trajectory for. Default is `NULL`, where the
+#' first date in `calendar_dates.txt` will be used.
 #' @param date_max Optional. A date object. The latest date in
-#' `calendar.txt` to create a trip trajectory for. Default is `NULL`, where the
-#' last date in `calendar.txt` will be used.
+#' `calendar_dates.txt` to create a trip trajectory for. Default is `NULL`, where the
+#' last date in `calendar_dates.txt` will be used.
 #' @param agency_timezone Optional. A timezone string (see `OlsonNames()`)
 #' indicating he appropriate timezone for the stop times. Default is `NULL`,
 #' where the timezone in `agency.txt` will be used.
@@ -505,9 +506,9 @@ get_gtfs_trajectory_fun <- function(gtfs,
     rlang::abort(message = "Provided GTFS not a tidygtfs object.",
                  class = "error_gtfsval_not_tidygtfs")
   }
-  # calendar: service_id, date
+  # calendar_dates: service_id, date
   validate_gtfs_input(gtfs,
-                      table = "calendar",
+                      table = "calendar_dates",
                       needed_fields = c("date", "service_id"))
   # stop_times: trip_id, stop_id, stop_sequence; others depend on timepoint used
   if (use_stop_time == "departure") {
@@ -535,10 +536,10 @@ get_gtfs_trajectory_fun <- function(gtfs,
   # Get bounds for min & max date
   # Set to bounds of input data if not provided
   if (is.null(date_min)) {
-    date_min <- min(as.Date(gtfs$calendar$date))
+    date_min <- min(as.Date(gtfs$calendar_dates$date))
   }
   if (is.null(date_max)) {
-    date_max <- max(as.Date(gtfs$calendar$date))
+    date_max <- max(as.Date(gtfs$calendar_dates$date))
   }
   # If TZ not povided, pull from input GTFS
   if(is.null(agency_timezone)) {
@@ -604,15 +605,31 @@ get_gtfs_trajectory_fun <- function(gtfs,
                           values_to = "stp_time")
   }
 
+  # Join previous info
+  if (!is.null(shape_geometry)) {
+    # If shape geometry provided, do not need to join by shape_id
+    trip_joins <- trip_timepoints %>%
+      dplyr::left_join(y = (gtfs$trips %>% dplyr::select(trip_id, service_id)),
+                       by = "trip_id", relationship = "many-to-many") %>%
+      dplyr::left_join(y = stop_dist_df, by = "stop_id") %>%
+      dplyr::left_join(y = (gtfs$calendar_dates %>% dplyr::select(service_id, date)),
+                       by = "service_id", relationship = "many-to-many") %>%
+      dplyr::mutate(trip_id = paste(date, trip_id, sep = "-"),
+                    date = as.Date(date))
+  } else {
+    # If shape geometry not provided, need to join by shape_id
+    trip_joins <- trip_timepoints %>%
+      dplyr::left_join(y = (gtfs$trips %>% dplyr::select(trip_id, shape_id, service_id)),
+                       by = "trip_id", relationship = "many-to-many") %>%
+      dplyr::left_join(y = stop_dist_df, by = c("stop_id", "shape_id")) %>%
+      dplyr::left_join(y = (gtfs$calendar_dates %>% dplyr::select(service_id, date)),
+                       by = "service_id", relationship = "many-to-many") %>%
+      dplyr::mutate(trip_id = paste(date, trip_id, sep = "-"),
+                    date = as.Date(date))
+  }
+
   # Get timetable, time-distance pairs
-  trip_distances <- trip_timepoints %>%
-    dplyr::left_join(y = (gtfs$trips %>% dplyr::select(trip_id, shape_id, service_id)),
-                     by = "trip_id", relationship = "many-to-many") %>%
-    dplyr::left_join(y = stop_dist_df, by = c("stop_id", "shape_id")) %>%
-    dplyr::left_join(y = (gtfs$calendar %>% dplyr::select(service_id, date)),
-                     by = "service_id", relationship = "many-to-many") %>%
-    dplyr::mutate(trip_id = paste(date, trip_id, sep = "-"),
-                  date = as.Date(date)) %>%
+  trip_distances <- trip_joins %>%
     # Filter to desired date range
     dplyr::filter((date >= date_min) & (date <= date_max)) %>%
     dplyr::mutate(hour_num = as.numeric(substr(stp_time, start = 1, stop = 2)),
@@ -630,7 +647,8 @@ get_gtfs_trajectory_fun <- function(gtfs,
                   # Convert time string to date type
                   event_timestamp = as.POSIXct(paste(date, stp_time, sep = " "),
                                                format = "%Y-%m-%d %H:%M:%S",
-                                               tz = agency_timezone)) %>%
+                                               tz = agency_timezone),
+                  location_ping_id = dplyr::row_number()) %>%
     dplyr::select(-c(date, hour_num, stp_time)) %>%
     dplyr::rename(trip_id_performed = trip_id)
 
