@@ -213,10 +213,12 @@ predict.avltrajectory_group <- function(object, new_times = NULL, new_distances 
   # Check DFs provided
   if ((!is.null(new_times)) & (!is.null(new_distances))) {
     # Only allow one of time or distance
-    stop("Please provide only one of new_times or new_distances.")
+    rlang::abort(message = "Please provide only one of new_times or new_distances.",
+                 class = "error_trajpredict_input")
   } else if (is.null(new_times) & is.null(new_distances)) {
     # Require one of new_times or new_distances
-    stop("Please provide one of new_times or new_distances")
+    rlang::abort(message = "Please provide one of new_times or new_distances.",
+                 class = "error_trajpredict_input")
   }
 
   all_trips <- unclass(object)
@@ -229,8 +231,9 @@ predict.avltrajectory_group <- function(object, new_times = NULL, new_distances 
     trips_check <- trips %in% all_trips
     if (!all(trips_check)) {
       # If at least one trip is not supported by the function
-      stop(paste("The following requested trips are not in this trajectory function:\n",
-                 trips[!trips_check], sep = ""))
+      rlang::abort(message = paste(c("The following requested trips are not in this trajectory function:\n",
+                                     trips[!trips_check]), collapse = " "),
+                   class = "error_trajpredict_trips")
     }
   }
 
@@ -255,18 +258,21 @@ predict.avltrajectory_group <- function(object, new_times = NULL, new_distances 
       # If a DF is provided
       if (!("event_timestamp" %in% names(new_times))) {
         # Check if new_times has needed column
-        stop("Please provide event_timestamp column in new_times")
+        rlang::abort(message = "Please provide event_timestamp column in new_times",
+                     class = "error_trajpredict_input")
       } else {
         new_times_df <- new_times
       }
     } else {
-      stop("Please provide either a vector or dataframe of new_times.")
+      rlang::abort(message = "Please provide either a vector or dataframe of new_times.",
+                   class = "error_trajpredict_input")
     }
 
     if (deriv > attr(object, "max_deriv")) {
       # Check if derivative is above function's allowed limit
-      stop(paste("Derivative too high. Maximum for this function is ",
-                 attr(object, "max_deriv"), sep = ""))
+      rlang::abort(message = paste("Derivative too high. Maximum for this function is ",
+                                   attr(object, "max_deriv"), sep = ""),
+                   class = "error_trajpredict_input")
     }
 
     # Function
@@ -289,24 +295,28 @@ predict.avltrajectory_group <- function(object, new_times = NULL, new_distances 
       # If a DF is provided
       if (!("distance" %in% names(new_distances))) {
         # Check if new_distances has needed column
-        stop("Please provide distance column in new_distances")
+        rlang::abort(message = "Please provide distance column in new_distances",
+                     class = "error_trajpredict_input")
       } else {
         new_distances_df <- new_distances
       }
     } else {
-      stop("Please provide either a vector or dataframe of new_distances.")
+      rlang::abort(message = "Please provide either a vector or dataframe of new_distances.",
+                   class = "error_trajpredict_input")
     }
 
     if (deriv > 0) {
       # Check if derivative provided
-      stop("Derivative not allowed for inverse function. Please find timepoints first, then derivatives at timepoints.")
+      rlang::abort(message = "Derivative not allowed for inverse function. Please find timepoints first, then derivatives at timepoints.",
+                   class = "error_trajpredict_input")
     }
 
     # Get inverse trajectory function
     inv_trajectory_function <- attr(object, "inv_traj_fun")
     if (is.null(inv_trajectory_function)) {
       # Check that inverse function actually exists
-      stop("Trajectory object does not contain inverse function. Please create one using get_trajectory_function().")
+      rlang::abort(message = "Trajectory object does not contain inverse function. Please create one using get_trajectory_function().",
+                   class = "error_trajpredict_input")
     }
 
     # Call internal function to do interpolation
@@ -324,10 +334,12 @@ predict.avltrajectory_single <- function(object, new_times = NULL, new_distances
   # Check DFs provided
   if ((!is.null(new_times)) & (!is.null(new_distances))) {
     # Only allow one of time or distance
-    stop("Please provide only one of new_times or new_distances.")
+    rlang::abort(message = "Please provide only one of new_times or new_distances.",
+                 class = "error_trajpredict_input")
   } else if (is.null(new_times) & is.null(new_distances)) {
     # Require one of new_times or new_distances
-    stop("Please provide one of new_times or new_distances")
+    rlang::abort(message = "Please provide one of new_times or new_distances.",
+                 class = "error_trajpredict_input")
   }
 
   # Get required data for all methods
@@ -349,19 +361,22 @@ predict.avltrajectory_single <- function(object, new_times = NULL, new_distances
       # If a DF is provided
       if (!("event_timestamp" %in% names(new_times))) {
         # Check if new_times has needed column
-        stop("Please provide event_timestamp column in new_times")
+        rlang::abort(message = "Please provide event_timestamp column in new_times.",
+                     class = "error_trajpredict_input")
       } else {
         new_times_df <- new_times
       }
     } else {
-      stop("Please provide either a vector or dataframe of new_times.")
+      rlang::abort(message = "Please provide either a vector or dataframe of new_times.",
+                   class = "error_trajpredict_input")
     }
 
     # Check derivative value
     if (deriv > attr(object, "max_deriv")) {
       # Check if derivative is above function's allowed limit
-      stop(paste("Derivative too high. Maximum for this function is ",
-                 attr(object, "max_deriv"), sep = ""))
+      rlang::abort(message = paste("Derivative too high. Maximum for this function is ",
+                                   attr(object, "max_deriv"), sep = ""),
+                   class = "error_trajpredict_input")
     }
 
     # Function
@@ -384,24 +399,28 @@ predict.avltrajectory_single <- function(object, new_times = NULL, new_distances
       # If a DF is provided
       if (!("distance" %in% names(new_distances))) {
         # Check if new_distances has needed column
-        stop("Please provide distance column in new_distances")
+        rlang::abort(message = "Please provide distance column in new_distances",
+                     class = "error_trajpredict_input")
       } else {
         new_distances_df <- new_distances
       }
     } else {
-      stop("Please provide either a vector or dataframe of new_distances.")
+      rlang::abort(message = "Please provide either a vector or dataframe of new_distances.",
+                   class = "error_trajpredict_input")
     }
 
     if (deriv > 0) {
       # Check if derivative provided
-      stop("Derivative not allowed for inverse function. Please find timepoints first, then derivatives at timepoints.")
+      rlang::abort(message = "Derivative not allowed for inverse function. Please find timepoints first, then derivatives at timepoints.",
+                   class = "error_trajpredict_input")
     }
 
     # Get inverse trajectory function
     inv_trajectory_function <- attr(object, "inv_traj_fun")
     if (is.null(inv_trajectory_function)) {
       # Check that inverse function actually exists
-      stop("Trajectory object does not contain inverse function. Please create one using get_trajectory_function().")
+      rlang::abort(message = "Trajectory object does not contain inverse function. Please create one using get_trajectory_function().",
+                   class = "error_trajpredict_input")
     }
 
     # Call internal function to do interpolation
@@ -433,7 +452,8 @@ interpolate_distances_group <- function(trip_extremes, new_times, trajectory_fun
     dplyr::select(-c(min_time, max_time, min_dist, max_dist))
 
   if (dim(new_times_trips)[1] == 0) {
-    stop("No trips provided within the range of new_times.")
+    rlang::abort("No trips provided within the range of new_times.",
+                 class = "error_trajpredict_trips")
   }
 
   if (deriv == 0) {
@@ -473,7 +493,8 @@ interpolate_distances_single <- function(trip_extremes, new_times, trajectory_fu
 
   if (dim(filt_df)[1] == 0) {
     # Check that points remain
-    stop("Trip not within the range of new_times.")
+    rlang::abort("Trip not within the range of new_times.",
+         class = "error_trajpredict_trips")
   }
 
   if (deriv == 0) {
@@ -511,7 +532,8 @@ interpolate_times_group <- function(trip_extremes, new_distances, inv_trajectory
     dplyr::select(-c(min_time, max_time, min_dist, max_dist))
 
   if (dim(new_dist_trips)[1] == 0) {
-    stop("No trips provided within the range of new_distances.")
+    rlang::abort("No trips provided within the range of new_distances.",
+                 class = "error_trajpredict_trips")
   }
 
   int_df <- new_dist_trips %>%
@@ -539,7 +561,8 @@ interpolate_times_single <- function(trip_extremes, new_distances, inv_trajector
 
   if (dim(filt_df)[1] == 0) {
     # Check that points remain
-    stop("Trip not within the range of new_distances")
+    rlang::abort("Trip not within the range of new_distances",
+                 class = "error_trajpredict_trips")
   }
 
   # Interpolate
