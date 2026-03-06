@@ -106,16 +106,12 @@ GTFS feed, <code>wmata_gtfs</code>.</p>
 </h3>
 <p><code>transittraj</code> is designed to clean and process AVL data.
 Unfortunately, AVL data does not have a widely-adopted standardized
-format; each vendor and data analytics platform outputs a different
-format, and GTFS-rt often lacks the in-depth operational data we need to
-perform meaningful analyses.</p>
-<p>In the interest of standardizing inputs to the package’s functions,
-<code>transittraj</code> is designed to take in files adhering to the
-TIDES <code>vehicle-location</code> standard table schema. TIDES is an
-open standard intended to fill the gaps described above, but is not yet
-widely adopted by agencies or data providers. We recommend reformatting
-your AVL data to meet the TIDES <code>vehicle-location</code> table
-schema, described <a href="https://tides-transit.org/main/tables/#vehicle-locations" class="external-link">here</a>.</p>
+format. In the interest of standardizing inputs to the package’s
+functions, <code>transittraj</code> is designed to take in files
+adhering to the TIDES <code>vehicle-location</code> standard table
+schema. TIDES is a new open standard intended to standardize transit
+data types not covered by GTFS. The TIDES <code>vehicle-location</code>
+table schema is described <a href="https://tides-transit.org/main/tables/#vehicle-locations" class="external-link">here</a>.</p>
 <p>Let’s see what TIDES AVL data looks like. The <code>wmata_avl</code>
 dataset provided with <code>transittraj</code> is reformatted from
 GTFS-rt to meet TIDES’s needs. Below is a peak:</p>
@@ -203,7 +199,7 @@ GTFS object <code>wmata_gtfs</code>, which complements the
 for functions to read, write, and manipulate GTFS feeds.
 <code>transittraj</code> offers a handful of additional helper functions
 for working with GTFS, most notably <code><a href="../reference/filter_by_route.html">filter_by_route()</a></code> and
-<code>get_shape_geometr()</code>. Additionally, we can also create an
+<code><a href="../reference/get_shape_geometry.html">get_shape_geometry()</a></code>. Additionally, we can also create an
 interactive visualization of a GTFS feed:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_interactive_gtfs.html">plot_interactive_gtfs</a></span><span class="op">(</span>gtfs <span class="op">=</span> <span class="va">wmata_gtfs</span>,</span>
@@ -218,7 +214,7 @@ with.</p>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
-<p>We now what data sources <code>transittraj</code> requires. Each
+<p>We now know what data sources <code>transittraj</code> requires. Each
 function in the package will check whether the input data meets that
 function’s requirements, and if it does not, an error will be thrown
 describing what’s wrong. When in doubt, try using

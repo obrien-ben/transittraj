@@ -32,17 +32,12 @@ library(tidytransit)
 ### Automatic Vehicle Location Data
 
 `transittraj` is designed to clean and process AVL data. Unfortunately,
-AVL data does not have a widely-adopted standardized format; each vendor
-and data analytics platform outputs a different format, and GTFS-rt
-often lacks the in-depth operational data we need to perform meaningful
-analyses.
-
-In the interest of standardizing inputs to the package’s functions,
+AVL data does not have a widely-adopted standardized format. In the
+interest of standardizing inputs to the package’s functions,
 `transittraj` is designed to take in files adhering to the TIDES
-`vehicle-location` standard table schema. TIDES is an open standard
-intended to fill the gaps described above, but is not yet widely adopted
-by agencies or data providers. We recommend reformatting your AVL data
-to meet the TIDES `vehicle-location` table schema, described
+`vehicle-location` standard table schema. TIDES is a new open standard
+intended to standardize transit data types not covered by GTFS. The
+TIDES `vehicle-location` table schema is described
 [here](https://tides-transit.org/main/tables/#vehicle-locations).
 
 Let’s see what TIDES AVL data looks like. The `wmata_avl` dataset
@@ -141,8 +136,10 @@ to read, write, and manipulate GTFS feeds. `transittraj` offers a
 handful of additional helper functions for working with GTFS, most
 notably
 [`filter_by_route()`](https://obrien-ben.github.io/transittraj/reference/filter_by_route.md)
-and `get_shape_geometr()`. Additionally, we can also create an
-interactive visualization of a GTFS feed:
+and
+[`get_shape_geometry()`](https://obrien-ben.github.io/transittraj/reference/get_shape_geometry.md).
+Additionally, we can also create an interactive visualization of a GTFS
+feed:
 
 ``` r
 plot_interactive_gtfs(gtfs = wmata_gtfs,
@@ -155,8 +152,8 @@ This interactive map is very useful for deciding which `shape_id` and
 
 ## Conclusion
 
-We now what data sources `transittraj` requires. Each function in the
-package will check whether the input data meets that function’s
+We now know what data sources `transittraj` requires. Each function in
+the package will check whether the input data meets that function’s
 requirements, and if it does not, an error will be thrown describing
 what’s wrong. When in doubt, try using
 [`validate_tides()`](https://obrien-ben.github.io/transittraj/reference/validate_tides.md)
