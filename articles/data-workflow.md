@@ -170,8 +170,7 @@ avl_map <- ggplot() +
           alpha = 0.2, size = .7) +
   # Format our map
   theme_void() +
-  labs(title = "C53 Shape & AVL") +
-  theme(plot.title = element_text(size = 8))
+  labs(title = "C53 Shape & AVL")
 avl_map
 ```
 
