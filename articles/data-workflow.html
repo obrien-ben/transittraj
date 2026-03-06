@@ -231,15 +231,11 @@ working with:</p>
 <p><img src="data-workflow_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="300%" style="display: block; margin: auto;"></p>
 <p>For the most part, our GPS pings follow the route alignment
 excellently. But what’s the deal with the points off-route in the far
-south? These pings roughly follow I-295 down to the Blue Plains
-neighborhood. They end roughly at the location of WMATA’s <a href="https://maps.app.goo.gl/RWNECRptbsDovPBJA" class="external-link">Shepherd Parkway</a>
-bus garage. The C53 is dispatched out of Shepherd, and most vehicles
-take I-295 to get between Shepherd and their starting/ending
-locations.</p>
-<p>Knowing this, these points most likely correspond to one (or more)
-deadheading vehicles that were logged into a trip but were not actually
-in revenue service. This is a pretty common phenomenon across AVL
-vendors. <code>transittraj</code> includes functions intended to
+south? These pings roughly follow I-295 down to WMATA’s <a href="https://maps.app.goo.gl/RWNECRptbsDovPBJA" class="external-link">Shepherd Parkway</a>
+bus garage. Knowing this, these points most likely correspond to one (or
+more) deadheading vehicles that were logged into a trip but were not
+actually in revenue service. This is a pretty common phenomenon across
+AVL vendors. <code>transittraj</code> includes functions intended to
 identify and remove potential deadheads. We’ll begin exploring these in
 the following section.</p>
 </div>
@@ -440,11 +436,7 @@ remove this – we can’t do much with a single observation.</p>
 manifests as a large instantaneous jump that does not match an points’s
 surrounding observations. In <strong>Step 4</strong>, the function
 <code><a href="../reference/clean_jumps.html">clean_jumps()</a></code> detects and removes these using median
-filters. Read more about the theory behind these filters using
-<code><a href="../reference/clean_jumps.html">help(clean_jumps)</a></code>.</p>
-<p>For this example, we’ll do a very simple median filter using only
-deviation from the median around each point. This has two main decision
-variables:</p>
+filters. This has two main decision variables:</p>
 <ul>
 <li><p>The neighborhood width, the total number of points to consider
 around each observation.</p></li>
@@ -525,9 +517,8 @@ closer look at these outlying points:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 8 more variables: window_mad &lt;dbl&gt;, med_dist &lt;dbl&gt;, is_implosion &lt;lgl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   is_tail &lt;lgl&gt;, ignore_observation &lt;lgl&gt;, mad_ok &lt;lgl&gt;, dev_ok &lt;lgl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   all_ok &lt;lgl&gt;</span></span></span></code></pre></div>
-<p>Let’s explore pings 16770 through 16910 from trip 1306100 as an
-example. We can plot the trip in this area to visualize the
-outliers:</p>
+<p>Let’s explore pings 16770 through 16910 from trip 1306100. We can
+plot the trip in this area to visualize the outliers:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter dataframe to our tirp &amp; distances</span></span>
 <span><span class="va">plot_df</span> <span class="op">&lt;-</span> <span class="va">c53_cleaned_subtrips</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
@@ -563,9 +554,8 @@ outliers:</p>
 <p>This plot makes it pretty clear that some of these points are a bit
 out of line. The final one removed may not truly be an outlier; we
 recommend playing around with the function’s options to find settings
-that make sense for your data. Again, there are a handful of
-customization options available through this function that we recommend
-exploring. Read more at <code><a href="../reference/clean_jumps.html">help(clean_jumps)</a></code>.</p>
+that make sense for your data. Read more about these options and the
+theory behind median filters at <code><a href="../reference/clean_jumps.html">help(clean_jumps)</a></code>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -574,14 +564,13 @@ exploring. Read more at <code><a href="../reference/clean_jumps.html">help(clean
 <p>AVL or GTFS-rt data is rarely transmitted perfectly. Often, there may
 be large gaps of missing data in the middle of trips, or you may have
 only a few observations from each trip. For <strong>Step 5</strong>, the
-function <code><a href="../reference/clean_incomplete_trips.html">clean_incomplete_trips()</a></code> filter out these trips
+function <code><a href="../reference/clean_incomplete_trips.html">clean_incomplete_trips()</a></code> filters out these trips
 There are two main groups of decision variables for this function:</p>
 <ul>
 <li><p>Minimum and maximum trip distances and durations.</p></li>
-<li><p>Minimum and maximum gaps between adjacent observations.</p></li>
+<li><p>Minimum and maximum distance and time gaps between adjacent
+observations.</p></li>
 </ul>
-<p>This function will remove the entirety of trips that violate your
-decision variables.</p>
 <p>For this example, we’ll use a minimum trip distance of 500 meters,
 and a minimum trip duration of 90 seconds. Anything will less data than
 this will be filtered out. Additionally, we’ll remove trips with a gap
@@ -725,9 +714,7 @@ ends of each trip:</p>
 <span><span class="co">#&gt; After:  4086  obs </span></span>
 <span><span class="co">#&gt; Difference:  3  obs removed</span></span></code></pre></div>
 <p>For this example, it looks like there were no long deadheads along
-the route alignment. Whether this function will make a difference will
-largely depend on the dataset and routes you’re working with. Let’s take
-a look at a the points removed:</p>
+the route alignment. Let’s take a look at a the points removed:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">c53_step6_removals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/trim_trips.html">trim_trips</a></span><span class="op">(</span></span>
 <span>  <span class="co"># Same settings as before</span></span>
@@ -804,7 +791,7 @@ location can help fit an excellent interpolating curve, but the values
 of observed speeds must meet certain conditions (known as <a href="https://epubs.siam.org/doi/10.1137/0717021" class="external-link">Fritsch-Carlson
 constraints</a>) to produce a monotonic spline. If your AVL data has
 speed information, and you plan to use it when fitting a spline (the
-recommend interpolation method), set <code>correct_speed = TRUE</code>
+recommended interpolation method), set <code>correct_speed = TRUE</code>
 to guarantee the fit is monotonic.</p></li>
 <li><p>Should the trajectory be made <em>strictly</em> monotonic? This
 will identify perfectly flat regions can give them a slight upward
@@ -867,11 +854,8 @@ speeds as well:</p>
 <p>We can see the trimmed dataset did not satisfy weak, strict, or
 Fristch-Carlson speed conditions for monotonicity, but the corrected
 dataset did. We can also see exactly which points were adjusted, and by
-how much, using the parameter <code>return_changes</code>. This is
-analagous to the <code>return_removals</code> option we saw in previous
-steps.</p>
-<p>Let’s visualize how this affected our data. Below we plot an example
-trip, 21499100, around one stop it makes:</p>
+how much, using the parameter <code>return_changes</code>. Below we plot
+an example trip, 21499100, around one stop it makes:</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set filter parameters</span></span>
 <span><span class="va">plot_trip</span> <span class="op">&lt;-</span> <span class="st">"21499100"</span></span>

@@ -179,17 +179,13 @@ avl_map
 
 For the most part, our GPS pings follow the route alignment excellently.
 But what’s the deal with the points off-route in the far south? These
-pings roughly follow I-295 down to the Blue Plains neighborhood. They
-end roughly at the location of WMATA’s [Shepherd
-Parkway](https://maps.app.goo.gl/RWNECRptbsDovPBJA) bus garage. The C53
-is dispatched out of Shepherd, and most vehicles take I-295 to get
-between Shepherd and their starting/ending locations.
-
-Knowing this, these points most likely correspond to one (or more)
-deadheading vehicles that were logged into a trip but were not actually
-in revenue service. This is a pretty common phenomenon across AVL
-vendors. `transittraj` includes functions intended to identify and
-remove potential deadheads. We’ll begin exploring these in the following
+pings roughly follow I-295 down to WMATA’s [Shepherd
+Parkway](https://maps.app.goo.gl/RWNECRptbsDovPBJA) bus garage. Knowing
+this, these points most likely correspond to one (or more) deadheading
+vehicles that were logged into a trip but were not actually in revenue
+service. This is a pretty common phenomenon across AVL vendors.
+`transittraj` includes functions intended to identify and remove
+potential deadheads. We’ll begin exploring these in the following
 section.
 
 ## Steps 1 & 2: Buffer & Linearize
@@ -401,13 +397,8 @@ GPS data, especially in urban areas, is noisy. Sometimes that noise
 manifests as a large instantaneous jump that does not match an points’s
 surrounding observations. In **Step 4**, the function
 [`clean_jumps()`](https://obrien-ben.github.io/transittraj/reference/clean_jumps.md)
-detects and removes these using median filters. Read more about the
-theory behind these filters using
-[`help(clean_jumps)`](https://obrien-ben.github.io/transittraj/reference/clean_jumps.md).
-
-For this example, we’ll do a very simple median filter using only
-deviation from the median around each point. This has two main decision
-variables:
+detects and removes these using median filters. This has two main
+decision variables:
 
 - The neighborhood width, the total number of points to consider around
   each observation.
@@ -495,8 +486,8 @@ print(c53_step4_removals)
 #> #   all_ok <lgl>
 ```
 
-Let’s explore pings 16770 through 16910 from trip 1306100 as an example.
-We can plot the trip in this area to visualize the outliers:
+Let’s explore pings 16770 through 16910 from trip 1306100. We can plot
+the trip in this area to visualize the outliers:
 
 ``` r
 # Filter dataframe to our tirp & distances
@@ -536,9 +527,8 @@ jumps_plot
 This plot makes it pretty clear that some of these points are a bit out
 of line. The final one removed may not truly be an outlier; we recommend
 playing around with the function’s options to find settings that make
-sense for your data. Again, there are a handful of customization options
-available through this function that we recommend exploring. Read more
-at
+sense for your data. Read more about these options and the theory behind
+median filters at
 [`help(clean_jumps)`](https://obrien-ben.github.io/transittraj/reference/clean_jumps.md).
 
 ## Step 5: Clean Incomplete Trips
@@ -547,15 +537,13 @@ AVL or GTFS-rt data is rarely transmitted perfectly. Often, there may be
 large gaps of missing data in the middle of trips, or you may have only
 a few observations from each trip. For **Step 5**, the function
 [`clean_incomplete_trips()`](https://obrien-ben.github.io/transittraj/reference/clean_incomplete_trips.md)
-filter out these trips There are two main groups of decision variables
+filters out these trips There are two main groups of decision variables
 for this function:
 
 - Minimum and maximum trip distances and durations.
 
-- Minimum and maximum gaps between adjacent observations.
-
-This function will remove the entirety of trips that violate your
-decision variables.
+- Minimum and maximum distance and time gaps between adjacent
+  observations.
 
 For this example, we’ll use a minimum trip distance of 500 meters, and a
 minimum trip duration of 90 seconds. Anything will less data than this
@@ -717,9 +705,7 @@ cat("Initial: ", step5_obs, " obs",
 ```
 
 For this example, it looks like there were no long deadheads along the
-route alignment. Whether this function will make a difference will
-largely depend on the dataset and routes you’re working with. Let’s take
-a look at a the points removed:
+route alignment. Let’s take a look at a the points removed:
 
 ``` r
 c53_step6_removals <- trim_trips(
@@ -805,8 +791,8 @@ has two decision variables:
   [Fritsch-Carlson
   constraints](https://epubs.siam.org/doi/10.1137/0717021)) to produce a
   monotonic spline. If your AVL data has speed information, and you plan
-  to use it when fitting a spline (the recommend interpolation method),
-  set `correct_speed = TRUE` to guarantee the fit is monotonic.
+  to use it when fitting a spline (the recommended interpolation
+  method), set `correct_speed = TRUE` to guarantee the fit is monotonic.
 
 - Should the trajectory be made *strictly* monotonic? This will identify
   perfectly flat regions can give them a slight upward slope. To be
@@ -877,10 +863,7 @@ print(step7_val)
 We can see the trimmed dataset did not satisfy weak, strict, or
 Fristch-Carlson speed conditions for monotonicity, but the corrected
 dataset did. We can also see exactly which points were adjusted, and by
-how much, using the parameter `return_changes`. This is analagous to the
-`return_removals` option we saw in previous steps.
-
-Let’s visualize how this affected our data. Below we plot an example
+how much, using the parameter `return_changes`. Below we plot an example
 trip, 21499100, around one stop it makes:
 
 ``` r
