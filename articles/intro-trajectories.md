@@ -5,9 +5,9 @@
 In the previous vignette
 ([`vignette("data-workflow")`](https://obrien-ben.github.io/transittraj/articles/data-workflow.md)),
 we saw how we can use `transittraj` to clean our AVL data. We took care
-of outliers, deadheading trips, noise and non-monotonic observations,
-and more. In this vignette, we’ll apply the cleaned data (`c53_mono`) to
-fit a trajectory function.
+of outliers, deadheading trips, noise, and non-monotonic observations.
+In this vignette, we’ll apply the cleaned data (`c53_mono`) to fit a
+trajectory function.
 
 Let’s begin by loading the libraries we’ll be using:
 
@@ -28,19 +28,17 @@ point in space. We can do both using
 [`get_trajectory_fun()`](https://obrien-ben.github.io/transittraj/reference/get_trajectory_fun.md).
 
 `transittraj` supports many different methods for fitting these
-functions. The simplest is linear interpolation without an inverse. If
-this is all you need, you can probably skip many of the cleaning steps
-from the previous vignette. For more fine-grained analyses, though, we
-recommend fitting a *velocity-informed piecewise cubic interpolating
-polynomial*. This uses the speeds and distances, correct for
-monotonicity, to fit a cubic spline between each observation. This is
-the type of curve that
+functions. The simplest is linear interpolation without an inverse. For
+more fine-grained analyses, though, we recommend fitting a
+*velocity-informed piecewise cubic interpolating polynomial*. This uses
+the speeds and distances, correct for monotonicity, to fit a cubic
+spline between each observation. This is the type of curve that
 [`get_trajectory_fun()`](https://obrien-ben.github.io/transittraj/reference/get_trajectory_fun.md)
 will fit by default (`interp_method = "monoH.FC"` and
 `use_speeds = TRUE`).
 
-Using the data we cleaned in the previous vignette, let’s finally fit
-our trajectory functions:
+Using the data we cleaned in the previous vignette, let’s fit our
+trajectory functions:
 
 ``` r
 # Run function
@@ -50,13 +48,10 @@ c53_traj <- get_trajectory_fun(distance_df = c53_mono,
                                find_inverse_fun = TRUE)
 ```
 
-Now we have a trajectory for each trip in `c53_mono`! Once your data is
-cleaned, fitting the trajectory is quick and easy; we’ve already done
-most of the heavy lifting.
-
-`transittraj` stores the fit curves in a special object class. This
-object stores a list of fit trajectories, one for each trip, as well as
-the time and distances ranges for each trip. We can use
+Now we have a trajectory for each trip in `c53_mono`. `transittraj`
+stores the fit curves in a special object class. This object stores a
+list of fit trajectories, one for each trip, as well as the time and
+distances ranges for each trip. We can use
 [`summary()`](https://rdrr.io/r/base/summary.html) to take a look inside
 the object:
 
@@ -77,9 +72,6 @@ summary(c53_traj)
 #>    --> Inverse function tolerance: 0.01
 #> ------
 ```
-
-You’ll notice the summary also contains information about the parameters
-we used to fit the curve.
 
 ## Interpolating
 
@@ -230,9 +222,9 @@ values.
 
 ### Quick Plots
 
-Now its time for the *really* fun part – plotting our trajectory curves.
-We can use [`plot()`](https://rdrr.io/r/graphics/plot.default.html) to
-generate a quick and easy plot of all trajectories:
+Now its time for the fun part – plotting our trajectory curves. We can
+use [`plot()`](https://rdrr.io/r/graphics/plot.default.html) to easily
+generate a plot of all trajectories:
 
 ``` r
 plot(c53_traj)
@@ -251,13 +243,11 @@ to create more interesting plots.
 To add features (such as stops) and customize formatting, we recommend
 using
 [`plot_trajectory()`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md).
-This function starts of similar to
-[`plot()`](https://rdrr.io/r/graphics/plot.default.html), taking a
-trajectory object. After that, you can add a dataframe of feature
-distances, such as the `c53_stops` we made ealier. Finally, formatting
-can be controlled using mapping dataframes. The colors and linetypes of
-both trajectories and features can be mapped to attributes using
-something similar to what is below:
+This function starts with atrajectory object; after that, you can add a
+dataframe of feature distances, such as the `c53_stops` dataframe we
+made ealier. Finally, formatting can be controlled using mapping
+dataframes. The colors and linetypes of both trajectories and features
+can be mapped to attributes using something similar to what is below:
 
 ``` r
 # Set formatting options for C53 stops
@@ -292,18 +282,19 @@ traj_plot
 
 ![](intro-trajectories_files/figure-html/unnamed-chunk-11-1.png)
 
-That’s a lot of trajectories, and it’s hard to see what’s actually going
-on. The benefits of the cleaning we did, and of fitting a spline
-trajectory, become much more apparent when we zoom in. Below we use the
-`distance_lim` parameter to zoom into the intersection of Florida Ave &
-U St. This is a large intersection with complex geometry and stops on
-either side. Additionally, we’ll center each trajectory to start at the
-same point in time using `center_trajectories`. This lets us visualize
-the distribution of travel times along a corridor.
+It’s hard to see what’s actually going on here. The benefits of the
+cleaning we did, and of fitting a spline trajectory, become much more
+apparent when we zoom in. Below we use the `distance_lim` parameter to
+zoom into the intersection of Florida Ave & U St. This is a large
+intersection with complex geometry and stops on either side.
+
+We’ll use two additional plotting parameters here. First,
+`center_trajectories` will center each trajectory to start at the same
+point in time. Second, `label_field` will create a label on our feature
+lines using the specified field from `c53_stops`.
 
 ``` r
 # Set parameters
-#am_lims <- c(13900, 14600)
 fl_U_intersection_lims <- c(12000, 12600)
 
 # Run function
@@ -321,7 +312,8 @@ traj_plot2 <- plot_trajectory(
   # Format trajectories
   traj_width = 0.6, traj_alpha = 0.6,
   # Add labels
-  label_field = "stop_name", label_pos = "right"
+  label_field = "stop_name", label_pos = "right",
+  label_alpha = 0.8
 )
 traj_plot2
 ```
@@ -332,43 +324,41 @@ We can glean some insights from this. Almost every trip stops at Florida
 & Georgia, either to serve the stop or wait for the signal. One trip
 sits there for a particularly long time. A handful of others stop at the
 signal in between these two stops, and a couple more stop at U &
-Vermont. A few trips have intermittent slowdown between these stops and
-signals, potentially due to other congestion sources.
+Vermont. A few trips have slowdowns between these stops and signals,
+potentially due to congestion.
 
-There are many formatting features available through
-[`plot_trajectory()`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md).
 Check out
 [`help(plot_trajectory)`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md)
-for a full discussion.
+for a full discussion of the formatting features available.
 
 ### Line Animations
 
 Another fun way to visualize transit vehicle trajectories is to animate
 them. Use
 [`plot_animated_line()`](https://obrien-ben.github.io/transittraj/reference/plot_animated_line.md)
-to animate vehicles, as points, moving along a straight line that
-represents the route.
+to animate vehicles, as points, moving along a straight line.
 
 The formatting process works very similarly with
 [`plot_animated_line()`](https://obrien-ben.github.io/transittraj/reference/plot_animated_line.md)
 as it does with
 [`plot_trajectory()`](https://obrien-ben.github.io/transittraj/reference/plot_trajectory.md).
-For this plot, we’ll also set some distance limits to zoom in to the
-Florida Ave-U St corridor of the route.
+A dataframe can be used to map the `outline` color and `shape`
+attributes of stop and vehicle points to their attributes.
 
 ``` r
 # Set parameters
 stop_formatting <- data.frame(timepoint = c("Yes", "No"),
                               outline = c("red1", "grey30"),
                               shape = c(22, 21))
-fl_U_corridor_lims <- c(9500, 15500)
 ```
 
-Now we can generate our line animation. We’ll use the field
-`label_field` to tell the function to label each stop point with the
-`stop_name` column in `c53_stops`:
+For this plot, we’ll zoom in to the Florida Ave-U St corridor of the
+route. Now we can generate our line animation:
 
 ``` r
+# Set distance limits
+fl_U_corridor_lims <- c(9500, 15500)
+
 # Run function
 line_anim <- plot_animated_line(
   # Add input data
@@ -445,11 +435,11 @@ map_anim
 
 Unable to execute JavaScript.
 
-This animation gives us a route-level that makes it easier to tell where
-we actually are (though you can zoom in to a specific distance range,
-like before). We can start to see, spatially where buses start to bunch
+This animation helps use see spatially where buses start to bunch
 together, such as the two vehicles entering Florida at around 0:34
 seconds, or the three vehicles near Florida at around 0:45 seconds.
+`distance_lims` can be used to zoom in on specific regions, just as
+before.
 
 ## Conclusion
 

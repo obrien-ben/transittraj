@@ -75,8 +75,8 @@
 </h2>
 <p>In the previous vignette (<code><a href="../articles/data-workflow.html">vignette("data-workflow")</a></code>), we
 saw how we can use <code>transittraj</code> to clean our AVL data. We
-took care of outliers, deadheading trips, noise and non-monotonic
-observations, and more. In this vignette, we’ll apply the cleaned data
+took care of outliers, deadheading trips, noise, and non-monotonic
+observations. In this vignette, we’ll apply the cleaned data
 (<code>c53_mono</code>) to fit a trajectory function.</p>
 <p>Let’s begin by loading the libraries we’ll be using:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -96,27 +96,23 @@ point in space. We can do both using
 <code><a href="../reference/get_trajectory_fun.html">get_trajectory_fun()</a></code>.</p>
 <p><code>transittraj</code> supports many different methods for fitting
 these functions. The simplest is linear interpolation without an
-inverse. If this is all you need, you can probably skip many of the
-cleaning steps from the previous vignette. For more fine-grained
-analyses, though, we recommend fitting a <em>velocity-informed piecewise
-cubic interpolating polynomial</em>. This uses the speeds and distances,
-correct for monotonicity, to fit a cubic spline between each
-observation. This is the type of curve that
+inverse. For more fine-grained analyses, though, we recommend fitting a
+<em>velocity-informed piecewise cubic interpolating polynomial</em>.
+This uses the speeds and distances, correct for monotonicity, to fit a
+cubic spline between each observation. This is the type of curve that
 <code><a href="../reference/get_trajectory_fun.html">get_trajectory_fun()</a></code> will fit by default
 (<code>interp_method = "monoH.FC"</code> and
 <code>use_speeds = TRUE</code>).</p>
-<p>Using the data we cleaned in the previous vignette, let’s finally fit
-our trajectory functions:</p>
+<p>Using the data we cleaned in the previous vignette, let’s fit our
+trajectory functions:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run function</span></span>
 <span><span class="va">c53_traj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_trajectory_fun.html">get_trajectory_fun</a></span><span class="op">(</span>distance_df <span class="op">=</span> <span class="va">c53_mono</span>,</span>
 <span>                               interp_method <span class="op">=</span> <span class="st">"monoH.FC"</span>,</span>
 <span>                               use_speeds <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                               find_inverse_fun <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>Now we have a trajectory for each trip in <code>c53_mono</code>! Once
-your data is cleaned, fitting the trajectory is quick and easy; we’ve
-already done most of the heavy lifting.</p>
-<p><code>transittraj</code> stores the fit curves in a special object
+<p>Now we have a trajectory for each trip in <code>c53_mono</code>.
+<code>transittraj</code> stores the fit curves in a special object
 class. This object stores a list of fit trajectories, one for each trip,
 as well as the time and distances ranges for each trip. We can use
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> to take a look inside the object:</p>
@@ -136,8 +132,6 @@ as well as the time and distances ranges for each trip. We can use
 <span><span class="co">#&gt; Inverse function present: TRUE</span></span>
 <span><span class="co">#&gt;    --&gt; Inverse function tolerance: 0.01</span></span>
 <span><span class="co">#&gt; ------</span></span></code></pre></div>
-<p>You’ll notice the summary also contains information about the
-parameters we used to fit the curve.</p>
 </div>
 <div class="section level2">
 <h2 id="interpolating">Interpolating<a class="anchor" aria-label="anchor" href="#interpolating"></a>
@@ -280,9 +274,9 @@ from distance values.</p>
 <div class="section level3">
 <h3 id="quick-plots">Quick Plots<a class="anchor" aria-label="anchor" href="#quick-plots"></a>
 </h3>
-<p>Now its time for the <em>really</em> fun part – plotting our
-trajectory curves. We can use <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> to generate a quick
-and easy plot of all trajectories:</p>
+<p>Now its time for the fun part – plotting our trajectory curves. We
+can use <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> to easily generate a plot of all
+trajectories:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">c53_traj</span><span class="op">)</span></span></code></pre></div>
 <p><img src="intro-trajectories_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
@@ -295,13 +289,12 @@ interesting plots.</p>
 <h3 id="detailed-trajectories">Detailed Trajectories<a class="anchor" aria-label="anchor" href="#detailed-trajectories"></a>
 </h3>
 <p>To add features (such as stops) and customize formatting, we
-recommend using <code><a href="../reference/plot_trajectory.html">plot_trajectory()</a></code>. This function starts of
-similar to <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, taking a trajectory object. After that,
-you can add a dataframe of feature distances, such as the
-<code>c53_stops</code> we made ealier. Finally, formatting can be
-controlled using mapping dataframes. The colors and linetypes of both
-trajectories and features can be mapped to attributes using something
-similar to what is below:</p>
+recommend using <code><a href="../reference/plot_trajectory.html">plot_trajectory()</a></code>. This function starts
+with atrajectory object; after that, you can add a dataframe of feature
+distances, such as the <code>c53_stops</code> dataframe we made ealier.
+Finally, formatting can be controlled using mapping dataframes. The
+colors and linetypes of both trajectories and features can be mapped to
+attributes using something similar to what is below:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set formatting options for C53 stops</span></span>
 <span><span class="va">stop_formatting</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>timepoint <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Yes"</span>, <span class="st">"No"</span><span class="op">)</span>,</span>
@@ -328,18 +321,19 @@ our formatted plot:</p>
 <span><span class="op">)</span></span>
 <span><span class="va">traj_plot</span></span></code></pre></div>
 <p><img src="intro-trajectories_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
-<p>That’s a lot of trajectories, and it’s hard to see what’s actually
-going on. The benefits of the cleaning we did, and of fitting a spline
-trajectory, become much more apparent when we zoom in. Below we use the
-<code>distance_lim</code> parameter to zoom into the intersection of
-Florida Ave &amp; U St. This is a large intersection with complex
-geometry and stops on either side. Additionally, we’ll center each
-trajectory to start at the same point in time using
-<code>center_trajectories</code>. This lets us visualize the
-distribution of travel times along a corridor.</p>
+<p>It’s hard to see what’s actually going on here. The benefits of the
+cleaning we did, and of fitting a spline trajectory, become much more
+apparent when we zoom in. Below we use the <code>distance_lim</code>
+parameter to zoom into the intersection of Florida Ave &amp; U St. This
+is a large intersection with complex geometry and stops on either
+side.</p>
+<p>We’ll use two additional plotting parameters here. First,
+<code>center_trajectories</code> will center each trajectory to start at
+the same point in time. Second, <code>label_field</code> will create a
+label on our feature lines using the specified field from
+<code>c53_stops</code>.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set parameters</span></span>
-<span><span class="co">#am_lims &lt;- c(13900, 14600)</span></span>
 <span><span class="va">fl_U_intersection_lims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">12000</span>, <span class="fl">12600</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Run function</span></span>
@@ -357,7 +351,8 @@ distribution of travel times along a corridor.</p>
 <span>  <span class="co"># Format trajectories</span></span>
 <span>  traj_width <span class="op">=</span> <span class="fl">0.6</span>, traj_alpha <span class="op">=</span> <span class="fl">0.6</span>,</span>
 <span>  <span class="co"># Add labels</span></span>
-<span>  label_field <span class="op">=</span> <span class="st">"stop_name"</span>, label_pos <span class="op">=</span> <span class="st">"right"</span></span>
+<span>  label_field <span class="op">=</span> <span class="st">"stop_name"</span>, label_pos <span class="op">=</span> <span class="st">"right"</span>,</span>
+<span>  label_alpha <span class="op">=</span> <span class="fl">0.8</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">traj_plot2</span></span></code></pre></div>
 <p><img src="intro-trajectories_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
@@ -365,34 +360,34 @@ distribution of travel times along a corridor.</p>
 Florida &amp; Georgia, either to serve the stop or wait for the signal.
 One trip sits there for a particularly long time. A handful of others
 stop at the signal in between these two stops, and a couple more stop at
-U &amp; Vermont. A few trips have intermittent slowdown between these
-stops and signals, potentially due to other congestion sources.</p>
-<p>There are many formatting features available through
-<code><a href="../reference/plot_trajectory.html">plot_trajectory()</a></code>. Check out
-<code><a href="../reference/plot_trajectory.html">help(plot_trajectory)</a></code> for a full discussion.</p>
+U &amp; Vermont. A few trips have slowdowns between these stops and
+signals, potentially due to congestion.</p>
+<p>Check out <code><a href="../reference/plot_trajectory.html">help(plot_trajectory)</a></code> for a full discussion of
+the formatting features available.</p>
 </div>
 <div class="section level3">
 <h3 id="line-animations">Line Animations<a class="anchor" aria-label="anchor" href="#line-animations"></a>
 </h3>
 <p>Another fun way to visualize transit vehicle trajectories is to
 animate them. Use <code><a href="../reference/plot_animated_line.html">plot_animated_line()</a></code> to animate vehicles,
-as points, moving along a straight line that represents the route.</p>
+as points, moving along a straight line.</p>
 <p>The formatting process works very similarly with
 <code><a href="../reference/plot_animated_line.html">plot_animated_line()</a></code> as it does with
-<code><a href="../reference/plot_trajectory.html">plot_trajectory()</a></code>. For this plot, we’ll also set some
-distance limits to zoom in to the Florida Ave-U St corridor of the
-route.</p>
+<code><a href="../reference/plot_trajectory.html">plot_trajectory()</a></code>. A dataframe can be used to map the
+<code>outline</code> color and <code>shape</code> attributes of stop and
+vehicle points to their attributes.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set parameters</span></span>
 <span><span class="va">stop_formatting</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>timepoint <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Yes"</span>, <span class="st">"No"</span><span class="op">)</span>,</span>
 <span>                              outline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red1"</span>, <span class="st">"grey30"</span><span class="op">)</span>,</span>
-<span>                              shape <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">fl_U_corridor_lims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9500</span>, <span class="fl">15500</span><span class="op">)</span></span></code></pre></div>
-<p>Now we can generate our line animation. We’ll use the field
-<code>label_field</code> to tell the function to label each stop point
-with the <code>stop_name</code> column in <code>c53_stops</code>:</p>
+<span>                              shape <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>For this plot, we’ll zoom in to the Florida Ave-U St corridor of the
+route. Now we can generate our line animation:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Run function</span></span>
+<code class="sourceCode R"><span><span class="co"># Set distance limits</span></span>
+<span><span class="va">fl_U_corridor_lims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9500</span>, <span class="fl">15500</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Run function</span></span>
 <span><span class="va">line_anim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_animated_line.html">plot_animated_line</a></span><span class="op">(</span></span>
 <span>  <span class="co"># Add input data</span></span>
 <span>  trajectory <span class="op">=</span> <span class="va">c53_traj</span>,</span>
@@ -462,11 +457,11 @@ functions. We can reuse the formatting options from
 <iframe src="https://www.youtube.com/embed/SKOE7F-oSnY" width="533" height="300" frameborder="0" allowfullscreen="" data-external="1"></iframe>
 </div>
 </div>
-<p>This animation gives us a route-level that makes it easier to tell
-where we actually are (though you can zoom in to a specific distance
-range, like before). We can start to see, spatially where buses start to
-bunch together, such as the two vehicles entering Florida at around 0:34
-seconds, or the three vehicles near Florida at around 0:45 seconds.</p>
+<p>This animation helps use see spatially where buses start to bunch
+together, such as the two vehicles entering Florida at around 0:34
+seconds, or the three vehicles near Florida at around 0:45 seconds.
+<code>distance_lims</code> can be used to zoom in on specific regions,
+just as before.</p>
 </div>
 </div>
 <div class="section level2">
