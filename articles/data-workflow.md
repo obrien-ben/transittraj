@@ -167,12 +167,11 @@ avl_map <- ggplot() +
   # Add alignment & points
   geom_sf(data = c53_shape, color = "red", linewidth = 1.5) +
   geom_sf(data= c53_sf, color = "blue",
-          alpha = 0.2, size = .7) +
+          alpha = 0.2, size = 0.6) +
   # Format our map
   theme_void() +
-  labs(title = "C53 Shape & AVL") #+
-  #theme(plot.margin = ggplot2::margin(t = 0, b = 0, l = 0, r = 0,
-  #                                    unit = "mm"))
+  labs(title = "C53 Shape & AVL") +
+  theme(plot.title = ggplot2::element_text(size = 7))
 avl_map
 ```
 
