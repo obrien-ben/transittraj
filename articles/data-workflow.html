@@ -74,10 +74,17 @@
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
 <p>In this vignette, we will walk through <code>transittraj</code>’s
-entire AVL cleaning and trajectory reconstruction workflow. Check out
-<code><a href="../articles/input-data.html">vignette("input-data")</a></code> to learn more about the AVL and GTFS
-data we’ll be using.</p>
-<p>Let’s begin by loading the libraries we’ll be using:</p>
+entire AVL cleaning workflow, intended to correct or remove problematic
+point observations and trips. This seven-step process is summarized in
+the figure below.</p>
+<div class="figure" style="text-align: center">
+<img src="figures/avl-cleaning-workflow.png" class="r-plt" alt="`transittraj` AVL cleaning process" width="70%"><p class="caption">
+<code>transittraj</code> AVL cleaning process
+</p>
+</div>
+<p>Check out <code><a href="../articles/input-data.html">vignette("input-data")</a></code> to learn more about the
+AVL and GTFS data we’ll be using. Let’s begin by loading the libraries
+we’ll be using:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/UTEL-UIUC/transittraj" class="external-link">transittraj</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/r-transit/tidytransit" class="external-link">tidytransit</a></span><span class="op">)</span></span>
@@ -221,7 +228,7 @@ working with:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"C53 Shape &amp; AVL"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">avl_map</span></span></code></pre></div>
-<p><img src="data-workflow_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="300%" style="display: block; margin: auto;"></p>
+<p><img src="data-workflow_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="300%" style="display: block; margin: auto;"></p>
 <p>For the most part, our GPS pings follow the route alignment
 excellently. But what’s the deal with the points off-route in the far
 south? These pings roughly follow I-295 down to the Blue Plains
@@ -552,7 +559,7 @@ outliers:</p>
 <span>       title <span class="op">=</span> <span class="st">"Outliers on C53"</span>,</span>
 <span>       subtitle <span class="op">=</span> <span class="st">"Trip 13478100"</span><span class="op">)</span></span>
 <span><span class="va">jumps_plot</span></span></code></pre></div>
-<p><img src="data-workflow_files/figure-html/unnamed-chunk-19-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="data-workflow_files/figure-html/unnamed-chunk-20-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>This plot makes it pretty clear that some of these points are a bit
 out of line. The final one removed may not truly be an outlier; we
 recommend playing around with the function’s options to find settings
@@ -667,7 +674,7 @@ a look at one, trip 21956100:</p>
 <span>       title <span class="op">=</span> <span class="st">"Gap on C53"</span>,</span>
 <span>       subtitle <span class="op">=</span> <span class="st">"Trip 21956100"</span><span class="op">)</span></span>
 <span><span class="va">gaps_plot</span></span></code></pre></div>
-<p><img src="data-workflow_files/figure-html/unnamed-chunk-23-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="data-workflow_files/figure-html/unnamed-chunk-24-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>We can see this trip’s gap around 12,500 meters. The slope of this
 line is a bit steep, but is not unreasonable; it looks like a few
 GTFS-rt pings just went missing here. When we go to reconstruct a
@@ -771,7 +778,7 @@ a look at a the points removed:</p>
 <span>       title <span class="op">=</span> <span class="st">"Trimmed Trips on C53"</span>,</span>
 <span>       subtitle <span class="op">=</span> <span class="st">"Trip 35294100"</span><span class="op">)</span></span>
 <span><span class="va">trimmed_plot</span></span></code></pre></div>
-<p><img src="data-workflow_files/figure-html/unnamed-chunk-27-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="data-workflow_files/figure-html/unnamed-chunk-28-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>As noted before, this does not seem to be a long deadhead; just some
 noise at the beginning of the route (by default,
 <code><a href="../reference/clean_jumps.html">clean_jumps()</a></code> does not look for jumps at the beginning/end
@@ -908,7 +915,7 @@ trip, 21499100, around one stop it makes:</p>
 <span>       title <span class="op">=</span> <span class="st">"Monotonic Correction on C53"</span>,</span>
 <span>       subtitle <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Trip "</span>, <span class="va">plot_trip</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mono_plot</span></span></code></pre></div>
-<p><img src="data-workflow_files/figure-html/unnamed-chunk-32-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><img src="data-workflow_files/figure-html/unnamed-chunk-33-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>In this trip, the GPS backtracks slightly while the bus is supposed
 to be stopped. The speeds are also larger than is physically feasible
 for a monotonic trajectory as the bus enters and leaves this stop.
@@ -920,8 +927,9 @@ for a monotonic trajectory as the bus enters and leaves this stop.
 </h2>
 <p>That was a lot of cleaning! But we now have a dataset free of
 outliers and deadheading trips, and that we know will produce a
-monotonic and invertible trajectory function. In the <a href="https://utel-uiuc.github.io/transittraj/articles/intro-trajectories.html" class="external-link">next
-vignette</a>, we will fit and explore these interpolating curves.</p>
+monotonic and invertible trajectory function. In the next vignette
+(<code><a href="../articles/intro-trajectories.html">vignette("articles/intro-trajectories")</a></code>) we will fit and
+explore these interpolating curves.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

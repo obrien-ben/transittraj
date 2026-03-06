@@ -3,11 +3,19 @@
 ## Introduction
 
 In this vignette, we will walk through `transittraj`’s entire AVL
-cleaning and trajectory reconstruction workflow. Check out
-[`vignette("input-data")`](https://obrien-ben.github.io/transittraj/articles/input-data.md)
-to learn more about the AVL and GTFS data we’ll be using.
+cleaning workflow, intended to correct or remove problematic point
+observations and trips. This seven-step process is summarized in the
+figure below.
 
-Let’s begin by loading the libraries we’ll be using:
+![\`transittraj\` AVL cleaning
+process](figures/avl-cleaning-workflow.png)
+
+`transittraj` AVL cleaning process
+
+Check out
+[`vignette("input-data")`](https://obrien-ben.github.io/transittraj/articles/input-data.md)
+to learn more about the AVL and GTFS data we’ll be using. Let’s begin by
+loading the libraries we’ll be using:
 
 ``` r
 library(transittraj)
@@ -167,7 +175,7 @@ avl_map <- ggplot() +
 avl_map
 ```
 
-![](data-workflow_files/figure-html/unnamed-chunk-8-1.png)
+![](data-workflow_files/figure-html/unnamed-chunk-9-1.png)
 
 For the most part, our GPS pings follow the route alignment excellently.
 But what’s the deal with the points off-route in the far south? These
@@ -523,7 +531,7 @@ jumps_plot <- ggplot() +
 jumps_plot
 ```
 
-![](data-workflow_files/figure-html/unnamed-chunk-19-1.png)
+![](data-workflow_files/figure-html/unnamed-chunk-20-1.png)
 
 This plot makes it pretty clear that some of these points are a bit out
 of line. The final one removed may not truly be an outlier; we recommend
@@ -652,7 +660,7 @@ gaps_plot <- ggplot() +
 gaps_plot
 ```
 
-![](data-workflow_files/figure-html/unnamed-chunk-23-1.png)
+![](data-workflow_files/figure-html/unnamed-chunk-24-1.png)
 
 We can see this trip’s gap around 12,500 meters. The slope of this line
 is a bit steep, but is not unreasonable; it looks like a few GTFS-rt
@@ -768,7 +776,7 @@ trimmed_plot <- ggplot() +
 trimmed_plot
 ```
 
-![](data-workflow_files/figure-html/unnamed-chunk-27-1.png)
+![](data-workflow_files/figure-html/unnamed-chunk-28-1.png)
 
 As noted before, this does not seem to be a long deadhead; just some
 noise at the beginning of the route (by default,
@@ -920,7 +928,7 @@ mono_plot <- ggplot() +
 mono_plot
 ```
 
-![](data-workflow_files/figure-html/unnamed-chunk-32-1.png)
+![](data-workflow_files/figure-html/unnamed-chunk-33-1.png)
 
 In this trip, the GPS backtracks slightly while the bus is supposed to
 be stopped. The speeds are also larger than is physically feasible for a
@@ -932,6 +940,6 @@ identified and corrected both issues.
 
 That was a lot of cleaning! But we now have a dataset free of outliers
 and deadheading trips, and that we know will produce a monotonic and
-invertible trajectory function. In the [next
-vignette](https://utel-uiuc.github.io/transittraj/articles/intro-trajectories.html),
+invertible trajectory function. In the next vignette
+([`vignette("articles/intro-trajectories")`](https://obrien-ben.github.io/transittraj/articles/intro-trajectories.md))
 we will fit and explore these interpolating curves.
