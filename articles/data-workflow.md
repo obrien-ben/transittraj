@@ -180,10 +180,9 @@ avl_map
 For the most part, our GPS pings follow the route alignment excellently.
 But what’s the deal with the points off-route in the far south? These
 pings roughly follow I-295 down to WMATA’s [Shepherd
-Parkway](https://maps.app.goo.gl/RWNECRptbsDovPBJA) bus garage. Knowing
-this, these points most likely correspond to one (or more) deadheading
-vehicles that were logged into a trip but were not actually in revenue
-service. This is a pretty common phenomenon across AVL vendors.
+Parkway](https://maps.app.goo.gl/RWNECRptbsDovPBJA) bus garage. These
+points most likely correspond to one or more deadheading vehicle that
+were logged into a trip but were not actually in revenue service.
 `transittraj` includes functions intended to identify and remove
 potential deadheads. We’ll begin exploring these in the following
 section.

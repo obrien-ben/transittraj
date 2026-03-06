@@ -228,16 +228,15 @@ working with:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"C53 Shape &amp; AVL"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">avl_map</span></span></code></pre></div>
-<p><img src="data-workflow_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="data-workflow_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>For the most part, our GPS pings follow the route alignment
 excellently. But what’s the deal with the points off-route in the far
 south? These pings roughly follow I-295 down to WMATA’s <a href="https://maps.app.goo.gl/RWNECRptbsDovPBJA" class="external-link">Shepherd Parkway</a>
-bus garage. Knowing this, these points most likely correspond to one (or
-more) deadheading vehicles that were logged into a trip but were not
-actually in revenue service. This is a pretty common phenomenon across
-AVL vendors. <code>transittraj</code> includes functions intended to
-identify and remove potential deadheads. We’ll begin exploring these in
-the following section.</p>
+bus garage. These points most likely correspond to one or more
+deadheading vehicle that were logged into a trip but were not actually
+in revenue service. <code>transittraj</code> includes functions intended
+to identify and remove potential deadheads. We’ll begin exploring these
+in the following section.</p>
 </div>
 </div>
 <div class="section level2">
