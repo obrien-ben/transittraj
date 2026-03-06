@@ -12,7 +12,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-knitr::knit_hooks$set(crop = knitr::hook_pdfcrop)
 ```
 
 # Introduction
@@ -132,7 +131,7 @@ print(c53_shape)
 We now have all the data we need to proceed. But before we do, let's visualize
 the AVL points and route geometry so we understand what we're working with:
 
-``` {r, out.width = "60%", dpi = 600, fig.align = "center", crop = TRUE}
+``` {r, out.width = "60%", dpi = 600, fig.align = "center", fig.width = 1}
 # Convert GPS points to spatial objects
 # You typically won't need to do this -- this is just for visualization
 c53_sf <- c53_avl %>%
@@ -153,8 +152,7 @@ avl_map <- ggplot() +
           alpha = 0.2, size = .7) +
   # Format our map
   theme_void() +
-  labs(title = "C53 Shape & AVL") +
-  theme(plot.title = element_text(size = 8))
+  labs(title = "C53 Shape & AVL")
 avl_map
 ```
 
