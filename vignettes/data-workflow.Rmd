@@ -131,7 +131,7 @@ print(c53_shape)
 We now have all the data we need to proceed. But before we do, let's visualize
 the AVL points and route geometry so we understand what we're working with:
 
-``` {r, out.width = "60%", dpi = 600, fig.align = "center", fig.width = 1}
+``` {r, out.width = "60%", dpi = 800, fig.align = "center", fig.width = 1, fig.height = 2}
 # Convert GPS points to spatial objects
 # You typically won't need to do this -- this is just for visualization
 c53_sf <- c53_avl %>%
@@ -152,7 +152,9 @@ avl_map <- ggplot() +
           alpha = 0.2, size = .7) +
   # Format our map
   theme_void() +
-  labs(title = "C53 Shape & AVL")
+  labs(title = "C53 Shape & AVL") #+
+  #theme(plot.margin = ggplot2::margin(t = 0, b = 0, l = 0, r = 0,
+  #                                    unit = "mm"))
 avl_map
 ```
 
