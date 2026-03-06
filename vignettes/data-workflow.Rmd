@@ -21,7 +21,7 @@ workflow, intended to correct or remove problematic point observations and
 trips. This seven-step process is summarized in the figure below.
 
 ``` {r, echo = FALSE, out.width = "70%", fig.align = "center", fig.cap = "`transittraj` AVL cleaning process"}
-knitr::include_graphics("/vignettes/figures/avl_cleaning_workflow.png")
+knitr::include_graphics("/vignettes/figures/avl-cleaning-workflow.png")
 ```
 
 Check out `vignette("input-data")` to learn more about the AVL and GTFS data
