@@ -17,10 +17,15 @@ knitr::opts_chunk$set(
 # Introduction
 
 In this vignette, we will walk through `transittraj`'s entire AVL cleaning
-and trajectory reconstruction workflow. Check out `vignette("input-data")`
-to learn more about the AVL and GTFS data we'll be using.
+workflow, intended to correct or remove problematic point observations and
+trips. This seven-step process is summarized in the figure below.
 
-Let's begin by loading the libraries we'll be using:
+``` {r, echo = FALSE, out.width = "70%", fig.align = "center", fig.cap = "`transittraj` AVL cleaning process"}
+knitr::include_graphics("/vignettes/figures/avl_cleaning_workflow.png")
+```
+
+Check out `vignette("input-data")` to learn more about the AVL and GTFS data
+we'll be using. Let's begin by loading the libraries we'll be using:
 
 ```{r setup, message = FALSE, warning = FALSE}
 library(transittraj)
@@ -794,6 +799,6 @@ identified and corrected both issues.
 
 That was a lot of cleaning! But we now have a dataset free of outliers and
 deadheading trips, and that we know will produce a monotonic and invertible
-trajectory function. In the
-[next vignette](https://utel-uiuc.github.io/transittraj/articles/intro-trajectories.html),
-we will fit and explore these interpolating curves.
+trajectory function. In the next vignette
+(`vignette("articles/intro-trajectories")`) we will fit and explore these
+interpolating curves.
