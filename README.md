@@ -56,9 +56,9 @@ incredibly powerful and versatile tools, and are widely used by traffic
 engineers and operations researchers for planning and system performance
 studies.
 
-Despite this, transit professionals rarely have the opportunity to see
+Transit professionals, however, rarely have the opportunity to see
 detailed trajectories of their vehicles, and instead typically only
-receive finalized metrics – such as dwell time and segment-level travel
+receive finalized metrics – such as dwell times and segment-level travel
 times – from analytics platforms. If a practitioner wanted to apply
 trajectory fitting tools from parallel fields, they would likely
 encounter challenges: transit data adheres to unique formatting
@@ -76,8 +76,7 @@ vehicle’s trajectory. This curve has four important attributes:
 
 - *Continuous*: There should be no gaps in the trajectory for each trip.
 
-- *Monotonic*: The trajectory should be strictly increasing – transit
-  vehicles typically don’t back up in service.
+- *Monotonic*: The vehicle’s position should strictly increase.
 
 - *Invertible*: The trajectory should provide position as a function of
   time, or time as a function of position.
@@ -88,14 +87,13 @@ vehicle’s trajectory. This curve has four important attributes:
 `transittraj` aims to make these workflows as smooth and accessible as
 possible. We begin with data that adheres to industry standard data
 formats, including [GTFS](https://gtfs.org/) and
-[TIDES](https://tides-transit.org/main/). In our cleaning and trajectory
-fitting, our functions are flexible but avoid techniques which require
-complex tuning. Finally, we provide tools to visualize and apply fit
-trajectory curves.
+[TIDES](https://tides-transit.org/main/), and functions are flexible but
+avoid techniques which require complex tuning. Finally, we provide tools
+to visualize and apply fit trajectory curves.
 
 <div class="figure" style="text-align: center">
 
-<img src="man/figures/README-arch.png" alt="Overview of `transittraj` workflow" width="90%" />
+<img src="man/figures/README-arch.png" alt="Overview of `transittraj` workflow" width="100%" />
 <p class="caption">
 
 Overview of `transittraj` workflow
@@ -121,12 +119,10 @@ Check out the following vignettes to learn more about how to use
 
 ## Works in Progress
 
-This package is still in early development. In prepartion for an
+This package is still in early development. In preparation for an
 eventual submission to CRAN, we’re still working on the following:
 
 - Examples in all function documentation
-
-- Sample datasets to include with `transittraj`
 
 - Formal automated testing
 
