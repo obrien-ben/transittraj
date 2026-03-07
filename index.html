@@ -86,17 +86,17 @@
 <h2 id="statement-of-need">Statement of Need<a class="anchor" aria-label="anchor" href="#statement-of-need"></a>
 </h2>
 <p>The primary goal of <code>transittraj</code> is to reconstruct <em>trajectories</em> of transit vehicles from AVL data. A trajectory is a function which describes the one-dimensional position (i.e., the distance from a trip’s beginning) of a transit vehicle over time. Vehicle trajectories are incredibly powerful and versatile tools, and are widely used by traffic engineers and operations researchers for planning and system performance studies.</p>
-<p>Despite this, transit professionals rarely have the opportunity to see detailed trajectories of their vehicles, and instead typically only receive finalized metrics – such as dwell time and segment-level travel times – from analytics platforms. If a practitioner wanted to apply trajectory fitting tools from parallel fields, they would likely encounter challenges: transit data adheres to unique formatting standards; very few open-source tools exist for handling transit vehicle location data; and, most importantly, common GPS processing techniques can oversmooth transit trajectories, as AVL pings occur with the same frequency (15-30 seconds) as stop dwells, signal delays, and other stop-and-go cyles.</p>
+<p>Transit professionals, however, rarely have the opportunity to see detailed trajectories of their vehicles, and instead typically only receive finalized metrics – such as dwell times and segment-level travel times – from analytics platforms. If a practitioner wanted to apply trajectory fitting tools from parallel fields, they would likely encounter challenges: transit data adheres to unique formatting standards; very few open-source tools exist for handling transit vehicle location data; and, most importantly, common GPS processing techniques can oversmooth transit trajectories, as AVL pings occur with the same frequency (15-30 seconds) as stop dwells, signal delays, and other stop-and-go cyles.</p>
 <p><code>transittraj</code> fills this gap this gap by proposing a workflow with two main steps. The first is data cleaning, where we focus on correcting noise and errors in point observations. Second, we use cleaned position and speed measurements to fit an interpolating curve representing the vehicle’s trajectory. This curve has four important attributes:</p>
 <ul>
 <li><p><em>Continuous</em>: There should be no gaps in the trajectory for each trip.</p></li>
-<li><p><em>Monotonic</em>: The trajectory should be strictly increasing – transit vehicles typically don’t back up in service.</p></li>
+<li><p><em>Monotonic</em>: The vehicle’s position should strictly increase.</p></li>
 <li><p><em>Invertible</em>: The trajectory should provide position as a function of time, or time as a function of position.</p></li>
 <li><p><em>Differentiable</em>: At any point on the curve, we should be able to interpolate for the speed of the vehicle.</p></li>
 </ul>
-<p><code>transittraj</code> aims to make these workflows as smooth and accessible as possible. We begin with data that adheres to industry standard data formats, including <a href="https://gtfs.org/" class="external-link">GTFS</a> and <a href="https://tides-transit.org/main/" class="external-link">TIDES</a>. In our cleaning and trajectory fitting, our functions are flexible but avoid techniques which require complex tuning. Finally, we provide tools to visualize and apply fit trajectory curves.</p>
+<p><code>transittraj</code> aims to make these workflows as smooth and accessible as possible. We begin with data that adheres to industry standard data formats, including <a href="https://gtfs.org/" class="external-link">GTFS</a> and <a href="https://tides-transit.org/main/" class="external-link">TIDES</a>, and functions are flexible but avoid techniques which require complex tuning. Finally, we provide tools to visualize and apply fit trajectory curves.</p>
 <div class="figure" style="text-align: center">
-<img src="reference/figures/README-arch.png" alt="Overview of `transittraj` workflow" width="90%"><p class="caption">
+<img src="reference/figures/README-arch.png" alt="Overview of `transittraj` workflow" width="100%"><p class="caption">
 Overview of <code>transittraj</code> workflow
 </p>
 </div>
@@ -116,10 +116,9 @@ Overview of <code>transittraj</code> workflow
 <div class="section level2">
 <h2 id="works-in-progress">Works in Progress<a class="anchor" aria-label="anchor" href="#works-in-progress"></a>
 </h2>
-<p>This package is still in early development. In prepartion for an eventual submission to CRAN, we’re still working on the following:</p>
+<p>This package is still in early development. In preparation for an eventual submission to CRAN, we’re still working on the following:</p>
 <ul>
 <li><p>Examples in all function documentation</p></li>
-<li><p>Sample datasets to include with <code>transittraj</code></p></li>
 <li><p>Formal automated testing</p></li>
 <li><p>Vignettes discussing methodology and inner-workings of <code>transittraj</code></p></li>
 </ul>
